@@ -1,8 +1,10 @@
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -168,7 +170,6 @@ public class LaundrySystem {
         String dorm = "";
         do {
             String dormInput = promptLine("Select Dormitory (enter number 1-" + DORMS.length + " or full name): ");
-            // Check if entered as a 1-based index
             try {
                 int idx = Integer.parseInt(dormInput);
                 if (idx >= 1 && idx <= DORMS.length) {
@@ -323,7 +324,6 @@ public class LaundrySystem {
             String payChoice = promptLine("Enter choice (1-2): ");
             if ("1".equals(payChoice)) {
                 paymentStatus = PaymentStatus.PAID;
-                // Choose Cash or Online
                 boolean methodChosen = false;
                 do {
                     System.out.println("Select Payment Method:");
@@ -558,6 +558,206 @@ public class LaundrySystem {
     }
 
     // =========================================================================
+    // MENU OPTION 7: DISPATCH TRIKE (DELIVERY ROUTING & CAPACITY)
+    // =========================================================================
+
+    /**
+     * Groups dorm-sorted orders into Stop objects in a single pass using nested loops,
+     * enforcing the TRIKE_CAPACITY (10 loads maximum per run).
+     *
+     * @param sortedOrders delivery orders sorted by dorm name
+     * @return list of Stop objects fitting within the 10-load limit
+     */
+    public List<Stop> buildStops(List<Order> sortedOrders) {
+        List<Stop> stops = new ArrayList<>();
+        int loadCount = 0;
+        int i = 0;
+
+        // Outer loop: iterate across distinct dorm groups
+        while (i < sortedOrders.size()) {
+            Order firstOrder = sortedOrders.get(i);
+            String currentDorm = firstOrder.getCustomer().getDorm();
+
+            // Check if adding this order exceeds trike capacity
+            if (loadCount + firstOrder.getLoads() > TRIKE_CAPACITY) {
+                System.out.printf(">> Trike capacity limit reached (%d/%d loads). Remaining orders will be scheduled for next run.\n",
+                        loadCount, TRIKE_CAPACITY);
+                break;
+            }
+
+            Stop currentStop = new Stop(currentDorm);
+
+            // Nested loop: group consecutive orders belonging to the same dorm
+            while (i < sortedOrders.size()) {
+                Order order = sortedOrders.get(i);
+                if (!order.getCustomer().getDorm().equalsIgnoreCase(currentDorm)) {
+                    break; // Next dormitory reached
+                }
+                if (loadCount + order.getLoads() > TRIKE_CAPACITY) {
+                    System.out.printf(">> Trike capacity limit reached (%d/%d loads). Remaining orders will be scheduled for next run.\n",
+                            loadCount, TRIKE_CAPACITY);
+                    break;
+                }
+                currentStop.addOrder(order);
+                loadCount += order.getLoads();
+                i++;
+            }
+
+            if (!currentStop.getOrders().isEmpty()) {
+                stops.add(currentStop);
+            }
+
+            // If capacity limit stopped inner loop, terminate grouping
+            if (i < sortedOrders.size() && (loadCount + sortedOrders.get(i).getLoads() > TRIKE_CAPACITY)) {
+                break;
+            }
+        }
+
+        return stops;
+    }
+
+    /**
+     * Menu 7: Filters orders that are READY and returnMethod == DELIVERY.
+     * Sorts them by dorm using Merge Sort (SortUtil.BY_DORM).
+     * Invokes buildStops() to group by dorm and apply 10-load trike limit.
+     * Enqueues stops into stopQueue (FIFO), transfers to temporary list,
+     * and pushes onto trikeStack (LIFO) in reverse order so the 1st stop pops first.
+     * Sets included orders to OUT_FOR_DELIVERY, archives the run in deliveryLog,
+     * and displays run summary.
+     */
+    public void dispatchTrike() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("              DISPATCH DELIVERY TRIKE             ");
+        System.out.println("--------------------------------------------------");
+
+        // 1. Filter orders that are READY and DELIVERY
+        List<Order> readyDeliveryOrders = new ArrayList<>();
+        for (Order o : this.orders) {
+            if (o.getLaundryStatus() == LaundryStatus.READY && o.getReturnMethod() == ReturnMethod.DELIVERY) {
+                readyDeliveryOrders.add(o);
+            }
+        }
+
+        if (readyDeliveryOrders.isEmpty()) {
+            System.out.println("No orders ready for delivery!");
+            return;
+        }
+
+        // 2. Merge sort orders by dorm name
+        List<Order> sortedByDorm = SortUtil.mergeSort(readyDeliveryOrders, SortUtil.BY_DORM);
+
+        // 3. Build dorm-grouped stops enforcing the 10-load limit
+        List<Stop> stops = buildStops(sortedByDorm);
+        if (stops.isEmpty()) {
+            System.out.println("No stops could be formed within capacity limit.");
+            return;
+        }
+
+        // 4. Enqueue created stops into stopQueue (FIFO)
+        stopQueue.clear();
+        for (Stop s : stops) {
+            stopQueue.add(s);
+        }
+
+        // 5. Transfer stops from stopQueue to a temporary list
+        List<Stop> tempStops = new ArrayList<>();
+        while (!stopQueue.isEmpty()) {
+            tempStops.add(stopQueue.poll());
+        }
+
+        // 6. Push stops onto trikeStack in reverse order (LIFO) so 1st stop ends up on top
+        trikeStack.clear();
+        for (int k = tempStops.size() - 1; k >= 0; k--) {
+            trikeStack.push(tempStops.get(k));
+        }
+
+        // 7. Update status of included orders to OUT_FOR_DELIVERY
+        int totalRunLoads = 0;
+        int totalRunOrders = 0;
+        for (Stop s : tempStops) {
+            totalRunLoads += s.getTotalLoads();
+            for (Order o : s.getOrders()) {
+                o.setLaundryStatus(LaundryStatus.OUT_FOR_DELIVERY);
+                totalRunOrders++;
+            }
+        }
+
+        // 8. Add dispatched run to deliveryLog
+        deliveryLog.add(new ArrayList<>(tempStops));
+
+        // 9. Display run summary
+        System.out.println("--------------------------------------------------");
+        System.out.printf("Tricycle Dispatched Successfully! (Run #%d)\n", deliveryLog.size());
+        System.out.printf("Total Stops: %d | Total Orders: %d | Total Loads: %d / %d loads\n",
+                tempStops.size(), totalRunOrders, totalRunLoads, TRIKE_CAPACITY);
+        System.out.println("Delivery Route Order (LIFO physical trike unloading):");
+        int stopNum = 1;
+        for (Stop s : tempStops) {
+            System.out.printf("  Stop %d: %s (%d load(s), %d order(s))\n",
+                    stopNum++, s.getDorm(), s.getTotalLoads(), s.getOrders().size());
+            for (Order o : s.getOrders()) {
+                System.out.printf("    - [%s] %s | Room %s | Php %.2f | %s\n",
+                        o.getOrderId(), o.getCustomer().getName(), o.getCustomer().getRoomNumber(),
+                        o.getTotalAmount(), o.getPaymentStatus());
+            }
+        }
+        System.out.println("--------------------------------------------------");
+    }
+
+    // =========================================================================
+    // MENU OPTION 8: DELIVER NEXT STOP
+    // =========================================================================
+
+    /**
+     * Menu 8: Pops the top stop from trikeStack (LIFO).
+     * Displays dorm and target rooms.
+     * For each order: if UNPAID, collects CASH payment; marks order COMPLETED.
+     */
+    public void deliverNextStop() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("                 DELIVER NEXT STOP                ");
+        System.out.println("--------------------------------------------------");
+
+        if (trikeStack.isEmpty()) {
+            System.out.println("No active delivery run!");
+            return;
+        }
+
+        // Pop top stop from LIFO trikeStack
+        Stop stop = trikeStack.pop();
+
+        System.out.printf("Arrived at Stop: %s\n", stop.getDorm());
+        System.out.printf("Orders to deliver: %d | Loads: %d\n", stop.getOrders().size(), stop.getTotalLoads());
+        System.out.println("--------------------------------------------------");
+
+        for (Order o : stop.getOrders()) {
+            Customer c = o.getCustomer();
+            System.out.printf("Delivering Order %s to Room %s (%s)...\n",
+                    o.getOrderId(), c.getRoomNumber(), c.getName());
+
+            if (o.getPaymentStatus() == PaymentStatus.UNPAID) {
+                System.out.printf(">> Collect Php %.2f from Room %s\n", o.getTotalAmount(), c.getRoomNumber());
+                o.setPaymentStatus(PaymentStatus.PAID);
+                o.setPaymentMethod(PaymentMethod.CASH);
+                System.out.printf("   [Payment Received] Php %.2f (Cash recorded)\n", o.getTotalAmount());
+            } else {
+                System.out.printf("   [Prepaid] Php %.2f via %s\n", o.getTotalAmount(), o.getPaymentMethod());
+            }
+
+            o.setLaundryStatus(LaundryStatus.COMPLETED);
+        }
+
+        System.out.printf("\nStop completed! %d order(s) delivered to %s.\n",
+                stop.getOrders().size(), stop.getDorm());
+        if (trikeStack.isEmpty()) {
+            System.out.println(">> Entire delivery run has been successfully completed!");
+        } else {
+            System.out.printf(">> %d stop(s) remaining on the trike.\n", trikeStack.size());
+        }
+        System.out.println("--------------------------------------------------");
+    }
+
+    // =========================================================================
     // MENU OPTION 9: CLAIM ORDER
     // =========================================================================
 
@@ -620,6 +820,415 @@ public class LaundrySystem {
         order.setLaundryStatus(LaundryStatus.COMPLETED);
         System.out.printf("Order %s has been successfully claimed by %s and marked COMPLETED!\n",
                 order.getOrderId(), order.getCustomer().getName());
+        System.out.println("--------------------------------------------------");
+    }
+
+    // =========================================================================
+    // MENU OPTION 10: SEARCH (10a / 10b)
+    // =========================================================================
+
+    /**
+     * Menu 10 Sub-menu: Coordinates customer and order searches.
+     */
+    public void searchMenu() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("                  SEARCH RECORDS                  ");
+        System.out.println("--------------------------------------------------");
+        System.out.println("  [1] Search Customer (by ID, Name, or Contact)");
+        System.out.println("  [2] Search Order (by Order ID)");
+        String choice = promptLine("Enter choice (1-2): ");
+        if ("1".equals(choice)) {
+            searchCustomer();
+        } else if ("2".equals(choice)) {
+            searchOrder();
+        } else {
+            System.out.println(">> Invalid choice!");
+        }
+    }
+
+    /**
+     * Menu 10a: Linear search for customer by ID, Name, or Contact number.
+     */
+    public void searchCustomer() {
+        System.out.println("\n--- Search Customer ---");
+        String query = promptLine("Enter Customer ID, Name, or Contact Number: ");
+        Customer c = SearchUtil.linearSearchCustomer(this.customers, query);
+
+        if (c == null) {
+            System.out.println("Customer not found!");
+            return;
+        }
+
+        System.out.println("--------------------------------------------------");
+        System.out.println("Customer Record Found:");
+        System.out.printf("  Customer ID:    %s\n", c.getCustomerId());
+        System.out.printf("  Name:           %s\n", c.getName());
+        System.out.printf("  Contact Number: %s\n", c.getContactNumber());
+        System.out.printf("  Dormitory:      %s\n", c.getDorm());
+        System.out.printf("  Room Number:    %s\n", c.getRoomNumber());
+
+        // Display associated orders
+        System.out.println("  Order History:");
+        boolean hasOrders = false;
+        for (Order o : this.orders) {
+            if (o.getCustomer().getCustomerId().equalsIgnoreCase(c.getCustomerId())) {
+                hasOrders = true;
+                System.out.printf("    - [%s] %.1f kg (%d loads) | Php %.2f | %s | %s\n",
+                        o.getOrderId(), o.getWeightKg(), o.getLoads(), o.getTotalAmount(),
+                        o.getLaundryStatus(), o.getPaymentStatus());
+            }
+        }
+        if (!hasOrders) {
+            System.out.println("    (No orders recorded for this customer yet)");
+        }
+        System.out.println("--------------------------------------------------");
+    }
+
+    /**
+     * Menu 10b: Binary search for order by Order ID.
+     */
+    public void searchOrder() {
+        System.out.println("\n--- Search Order ---");
+        String orderId = promptLine("Enter Order ID: ");
+        Order o = findOrderById(orderId);
+
+        if (o == null) {
+            System.out.println("Order not found!");
+            return;
+        }
+
+        DateTimeFormatter dtFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+
+        System.out.println("--------------------------------------------------");
+        System.out.println("Order Details Found:");
+        System.out.printf("  Order ID:          %s\n", o.getOrderId());
+        System.out.printf("  Customer:          %s (ID: %s)\n", o.getCustomer().getName(), o.getCustomer().getCustomerId());
+        System.out.printf("  Address:           %s, Room %s\n", o.getCustomer().getDorm(), o.getCustomer().getRoomNumber());
+        System.out.printf("  Weight & Loads:    %.1f kg -> %d load(s)\n", o.getWeightKg(), o.getLoads());
+        System.out.printf("  Total Amount:      Php %.2f\n", o.getTotalAmount());
+        System.out.printf("  Receive Method:    %s\n", o.getReceiveMethod());
+        System.out.printf("  Return Method:     %s\n", o.getReturnMethod());
+        System.out.printf("  Delivery Deadline: %s\n", (o.getDeliveryDeadline() != null ? o.getDeliveryDeadline().format(timeFmt) : "None"));
+        System.out.printf("  Laundry Status:    %s\n", o.getLaundryStatus());
+        System.out.printf("  Payment Status:    %s (%s)\n", o.getPaymentStatus(), (o.getPaymentMethod() != null ? o.getPaymentMethod() : "N/A"));
+        System.out.printf("  Time Received:     %s\n", (o.getTimeReceived() != null ? o.getTimeReceived().format(dtFmt) : "N/A"));
+        System.out.printf("  Time Ready:        %s\n", (o.getTimeReady() != null ? o.getTimeReady().format(dtFmt) : "Not yet ready"));
+        System.out.println("--------------------------------------------------");
+    }
+
+    // =========================================================================
+    // MENU OPTION 11: VIEW ORDERS (MERGE SORT ON COPY)
+    // =========================================================================
+
+    /**
+     * Menu 11: Prompts for a sort key, performs recursive Merge Sort on a fresh
+     * copy of the orders list (preserving the original list's Order ID order),
+     * and prints a formatted tabular view.
+     */
+    public void viewOrders() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("                   VIEW ORDERS                    ");
+        System.out.println("--------------------------------------------------");
+
+        if (this.orders.isEmpty()) {
+            System.out.println("No orders recorded in the system yet.");
+            return;
+        }
+
+        System.out.println("Select Sort Key:");
+        System.out.println("  [1] Total Amount (Ascending)");
+        System.out.println("  [2] Customer Name (A-Z)");
+        System.out.println("  [3] Time Received (Oldest to Newest)");
+        System.out.println("  [4] Delivery Deadline (Earliest to Latest)");
+        System.out.println("  [5] Dormitory Name (A-Z)");
+
+        Comparator<Order> chosenComparator = null;
+        String keyChoice = promptLine("Enter choice (1-5): ");
+
+        switch (keyChoice) {
+            case "1":
+                chosenComparator = SortUtil.BY_TOTAL_AMOUNT;
+                break;
+            case "2":
+                chosenComparator = SortUtil.BY_CUSTOMER_NAME;
+                break;
+            case "3":
+                chosenComparator = SortUtil.BY_TIME_RECEIVED;
+                break;
+            case "4":
+                chosenComparator = SortUtil.BY_DELIVERY_DEADLINE;
+                break;
+            case "5":
+                chosenComparator = SortUtil.BY_DORM;
+                break;
+            default:
+                System.out.println(">> Invalid key selection! Defaulting to Order ID order.");
+                break;
+        }
+
+        // Always sort a COPY to maintain binary-searchability of the original orders list
+        List<Order> copy = new ArrayList<>(this.orders);
+        List<Order> displayList = (chosenComparator != null) ? SortUtil.mergeSort(copy, chosenComparator) : copy;
+
+        printOrdersTable(displayList);
+    }
+
+    /**
+     * Formats and prints a list of orders in an ASCII tabular structure.
+     *
+     * @param list list of orders to print
+     */
+    private void printOrdersTable(List<Order> list) {
+        System.out.println("\n" + "=".repeat(120));
+        System.out.printf("%-9s | %-16s | %-18s | %-5s | %-5s | %-9s | %-10s | %-16s | %-8s | %-8s\n",
+                "Order ID", "Customer", "Dormitory & Room", "Kg", "Loads", "Total Php", "Return", "Status", "Payment", "Deadline");
+        System.out.println("-".repeat(120));
+
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+        for (Order o : list) {
+            String customerName = o.getCustomer().getName();
+            if (customerName.length() > 16) customerName = customerName.substring(0, 13) + "...";
+
+            String dormRoom = o.getCustomer().getDorm() + " R" + o.getCustomer().getRoomNumber();
+            if (dormRoom.length() > 18) dormRoom = dormRoom.substring(0, 15) + "...";
+
+            String deadline = (o.getDeliveryDeadline() != null) ? o.getDeliveryDeadline().format(timeFmt) : "--";
+
+            System.out.printf("%-9s | %-16s | %-18s | %5.1f | %5d | %9.2f | %-10s | %-16s | %-8s | %-8s\n",
+                    o.getOrderId(), customerName, dormRoom,
+                    o.getWeightKg(), o.getLoads(), o.getTotalAmount(),
+                    o.getReturnMethod(), o.getLaundryStatus(), o.getPaymentStatus(), deadline);
+        }
+        System.out.println("=".repeat(120));
+        System.out.printf("Total Orders Shown: %d\n", list.size());
+    }
+
+    // =========================================================================
+    // MENU OPTION 12: SYSTEM REPORTS (12a to 12e)
+    // =========================================================================
+
+    /**
+     * Menu 12 Sub-menu: Coordinates all 5 operational reports.
+     */
+    public void showReports() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("                  SYSTEM REPORTS                  ");
+        System.out.println("--------------------------------------------------");
+        System.out.println("  [1] Pending and Ready Orders (12a)");
+        System.out.println("  [2] Unpaid Orders (12b)");
+        System.out.println("  [3] Daily Sales Summary (12c)");
+        System.out.println("  [4] Dispatched Delivery Runs Log (12d)");
+        System.out.println("  [5] Late Ready Orders (> 3 hours) (12e)");
+        System.out.println("  [6] View All Reports Sequentially");
+        String choice = promptLine("Select report (1-6): ");
+
+        switch (choice) {
+            case "1": reportPendingAndReady(); break;
+            case "2": reportUnpaid(); break;
+            case "3": reportDailySales(); break;
+            case "4": reportDeliveryRuns(); break;
+            case "5": reportLateOrders(); break;
+            case "6":
+                reportPendingAndReady();
+                reportUnpaid();
+                reportDailySales();
+                reportDeliveryRuns();
+                reportLateOrders();
+                break;
+            default:
+                System.out.println(">> Invalid choice!");
+                break;
+        }
+    }
+
+    /**
+     * Report 12a: Displays pending (Waiting, Processing) and Ready orders.
+     * Includes elapsed waiting time for READY orders calculated via Duration.
+     */
+    public void reportPendingAndReady() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("      REPORT 12a: PENDING AND READY ORDERS        ");
+        System.out.println("--------------------------------------------------");
+
+        List<Order> active = new ArrayList<>();
+        for (Order o : this.orders) {
+            if (o.getLaundryStatus() == LaundryStatus.WAITING ||
+                o.getLaundryStatus() == LaundryStatus.PROCESSING ||
+                o.getLaundryStatus() == LaundryStatus.READY) {
+                active.add(o);
+            }
+        }
+
+        if (active.isEmpty()) {
+            System.out.println("No pending or ready orders at this time.");
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        System.out.printf("%-9s | %-16s | %-10s | %-12s | %-18s\n",
+                "Order ID", "Customer", "Loads", "Status", "Waiting / Elapsed");
+        System.out.println("-".repeat(75));
+
+        for (Order o : active) {
+            String elapsed = "In Washing Line";
+            if (o.getLaundryStatus() == LaundryStatus.PROCESSING) {
+                elapsed = "Currently Washing";
+            } else if (o.getLaundryStatus() == LaundryStatus.READY && o.getTimeReady() != null) {
+                Duration d = Duration.between(o.getTimeReady(), now);
+                long hours = d.toHours();
+                long minutes = d.toMinutesPart();
+                elapsed = String.format("Ready for %dh %02dm", hours, minutes);
+            }
+            System.out.printf("%-9s | %-16s | %-10d | %-12s | %-18s\n",
+                    o.getOrderId(), o.getCustomer().getName(), o.getLoads(), o.getLaundryStatus(), elapsed);
+        }
+        System.out.println("--------------------------------------------------");
+    }
+
+    /**
+     * Report 12b: Displays all unpaid orders with customer dorm details and calculates
+     * total outstanding accounts receivable.
+     */
+    public void reportUnpaid() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("            REPORT 12b: UNPAID ORDERS             ");
+        System.out.println("--------------------------------------------------");
+
+        double totalUnpaid = 0.0;
+        int unpaidCount = 0;
+
+        System.out.printf("%-9s | %-16s | %-20s | %-10s | %-10s\n",
+                "Order ID", "Customer", "Dorm & Room", "Loads", "Amount Due");
+        System.out.println("-".repeat(75));
+
+        for (Order o : this.orders) {
+            if (o.getPaymentStatus() == PaymentStatus.UNPAID) {
+                unpaidCount++;
+                totalUnpaid += o.getTotalAmount();
+                System.out.printf("%-9s | %-16s | %-20s | %-10d | Php %8.2f\n",
+                        o.getOrderId(), o.getCustomer().getName(),
+                        o.getCustomer().getDorm() + " R" + o.getCustomer().getRoomNumber(),
+                        o.getLoads(), o.getTotalAmount());
+            }
+        }
+
+        if (unpaidCount == 0) {
+            System.out.println("All orders are paid! No outstanding balances.");
+        } else {
+            System.out.println("-".repeat(75));
+            System.out.printf("Total Unpaid Orders: %d | Total Outstanding Balance: Php %.2f\n",
+                    unpaidCount, totalUnpaid);
+        }
+        System.out.println("--------------------------------------------------");
+    }
+
+    /**
+     * Report 12c: Displays daily sales totals split between Cash and Online payments.
+     */
+    public void reportDailySales() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("          REPORT 12c: DAILY SALES REPORT          ");
+        System.out.println("--------------------------------------------------");
+
+        double cashTotal = 0.0;
+        double onlineTotal = 0.0;
+        int paidCount = 0;
+
+        for (Order o : this.orders) {
+            if (o.getPaymentStatus() == PaymentStatus.PAID) {
+                paidCount++;
+                if (o.getPaymentMethod() == PaymentMethod.CASH) {
+                    cashTotal += o.getTotalAmount();
+                } else if (o.getPaymentMethod() == PaymentMethod.ONLINE) {
+                    onlineTotal += o.getTotalAmount();
+                }
+            }
+        }
+
+        double grandTotal = cashTotal + onlineTotal;
+        System.out.printf("Total Paid Orders:       %d\n", paidCount);
+        System.out.printf("Total Cash Payments:     Php %10.2f\n", cashTotal);
+        System.out.printf("Total Online Payments:   Php %10.2f\n", onlineTotal);
+        System.out.println("-".repeat(45));
+        System.out.printf("GRAND TOTAL SALES:       Php %10.2f\n", grandTotal);
+        System.out.println("--------------------------------------------------");
+    }
+
+    /**
+     * Report 12d: Displays all tricycle delivery runs dispatched today from deliveryLog.
+     */
+    public void reportDeliveryRuns() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("       REPORT 12d: DISPATCHED DELIVERY RUNS       ");
+        System.out.println("--------------------------------------------------");
+
+        if (deliveryLog.isEmpty()) {
+            System.out.println("No delivery runs dispatched yet today.");
+            return;
+        }
+
+        int runNum = 1;
+        for (List<Stop> run : deliveryLog) {
+            int runLoads = 0;
+            int runOrders = 0;
+            System.out.printf("=== RUN #%d === (Stops: %d)\n", runNum++, run.size());
+            int stopNum = 1;
+            for (Stop s : run) {
+                runLoads += s.getTotalLoads();
+                runOrders += s.getOrders().size();
+                System.out.printf("  Stop %d: %s (Total Loads: %d)\n", stopNum++, s.getDorm(), s.getTotalLoads());
+                for (Order o : s.getOrders()) {
+                    System.out.printf("    - [%s] %s (Room %s) | %.1f kg | Php %.2f | %s\n",
+                            o.getOrderId(), o.getCustomer().getName(), o.getCustomer().getRoomNumber(),
+                            o.getWeightKg(), o.getTotalAmount(), o.getPaymentStatus());
+                }
+            }
+            System.out.printf("  Run Totals: %d order(s) | %d load(s)\n\n", runOrders, runLoads);
+        }
+        System.out.println("--------------------------------------------------");
+    }
+
+    /**
+     * Report 12e: Identifies ready orders waiting longer than LATE_HOURS (3 hours)
+     * using java.time.Duration.
+     */
+    public void reportLateOrders() {
+        System.out.println("\n--------------------------------------------------");
+        System.out.println("    REPORT 12e: LATE READY ORDERS (> 3 HOURS)     ");
+        System.out.println("--------------------------------------------------");
+
+        LocalDateTime now = LocalDateTime.now();
+        int lateCount = 0;
+
+        System.out.printf("%-9s | %-16s | %-18s | %-10s | %-18s\n",
+                "Order ID", "Customer", "Dormitory", "Ready Time", "Waiting Duration");
+        System.out.println("-".repeat(80));
+
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+        for (Order o : this.orders) {
+            if (o.getLaundryStatus() == LaundryStatus.READY && o.getTimeReady() != null) {
+                Duration duration = Duration.between(o.getTimeReady(), now);
+                long hours = duration.toHours();
+                if (hours >= LATE_HOURS) {
+                    lateCount++;
+                    long minutes = duration.toMinutesPart();
+                    String durStr = String.format("%dh %02dm (LATE)", hours, minutes);
+                    System.out.printf("%-9s | %-16s | %-18s | %-10s | %-18s\n",
+                            o.getOrderId(), o.getCustomer().getName(),
+                            o.getCustomer().getDorm(),
+                            o.getTimeReady().format(timeFmt), durStr);
+                }
+            }
+        }
+
+        if (lateCount == 0) {
+            System.out.println("No late orders! All ready laundry orders are within the 3-hour window.");
+        } else {
+            System.out.println("-".repeat(80));
+            System.out.printf("Total Flagged Late Orders: %d (exceeded %d-hour SLA threshold)\n",
+                    lateCount, LATE_HOURS);
+        }
         System.out.println("--------------------------------------------------");
     }
 
@@ -785,7 +1394,7 @@ public class LaundrySystem {
     }
 
     // =========================================================================
-    // GETTERS FOR TESTING AND STAGE 3 INTEGRATION
+    // GETTERS FOR TESTING AND STAGE 3/4 INTEGRATION
     // =========================================================================
 
     public List<Customer> getCustomers() { return customers; }
