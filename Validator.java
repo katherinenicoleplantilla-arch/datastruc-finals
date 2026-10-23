@@ -1,6 +1,7 @@
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 /**
  * Utility class providing static input validation methods for the system.
@@ -8,19 +9,6 @@ import java.time.format.DateTimeParseException;
  * and delivery deadlines.
  */
 public class Validator {
-
-    /**
-     * The shop's official list of known student dormitories in Lipa City.
-     * Used across customer registration, validation, and delivery routing.
-     */
-    public static final String[] DORMS = {
-        "Villa Lourdes Dorm",
-        "Green Residences",
-        "St. Joseph Hall",
-        "Lipa Heights Dorm",
-        "De La Salle Dorm",
-        "University Suites"
-    };
 
     // Private constructor to prevent instantiation of utility class
     private Validator() {}
@@ -50,24 +38,44 @@ public class Validator {
     }
 
     /**
-     * Validates that a dormitory name exists in the shop's official DORMS list.
-     * Matches case-insensitively against the default shop DORMS.
+     * Validates that a custom dormitory name is non-null and not empty after trimming.
+     * Allows staff to add and use custom dormitories freely.
      *
-     * @param dorm dormitory name
-     * @return true if found in the dorm list, false otherwise
+     * @param dorm dormitory name entered by staff
+     * @return true if non-empty, false otherwise
      */
     public static boolean isValidDorm(String dorm) {
-        return isValidDorm(dorm, DORMS);
+        return dorm != null && !dorm.trim().isEmpty();
     }
 
     /**
-     * Validates that a dormitory name exists in the provided list of dorms.
+     * Validates that a dormitory name exists in the provided array of dorms.
      *
      * @param dorm      dormitory name to check
      * @param dormList  array of valid dorm names
      * @return true if found, false otherwise
      */
     public static boolean isValidDorm(String dorm, String[] dormList) {
+        if (dorm == null || dormList == null) {
+            return false;
+        }
+        String trimmed = dorm.trim();
+        for (String d : dormList) {
+            if (d != null && d.equalsIgnoreCase(trimmed)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Validates that a dormitory name exists in the provided list of dorms.
+     *
+     * @param dorm      dormitory name to check
+     * @param dormList  list of valid dorm names
+     * @return true if found, false otherwise
+     */
+    public static boolean isValidDorm(String dorm, List<String> dormList) {
         if (dorm == null || dormList == null) {
             return false;
         }

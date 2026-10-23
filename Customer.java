@@ -6,7 +6,7 @@ public class Customer {
     private String customerId;     // C followed by 3 digits, auto-generated (e.g. C001)
     private String name;           // Student's full name (non-empty)
     private String contactNumber;  // 11 digits starting with 09
-    private String dorm;           // Dorm/building chosen from shop's known DORMS list
+    private String dorm;           // Student's dormitory or residence hall name
     private String roomNumber;     // Room number (non-empty)
 
     /**

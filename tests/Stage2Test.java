@@ -225,7 +225,7 @@ public class Stage2Test {
         // Simulated inputs:
         // 1. Name: "" (invalid), "   " (invalid), "Andres Bonifacio" (valid)
         // 2. Contact: "123" (invalid), "0912345" (invalid), "09179998888" (valid)
-        // 3. Dorm: "99" (invalid), "1" (selects Villa Lourdes Dorm)
+        // 3. Dorm: "   " (invalid), "Villa Lourdes Dorm" (valid custom dorm)
         // 4. Room: "   " (invalid), "305-B" (valid)
         String simulatedInput = String.join("\n",
                 "",
@@ -234,8 +234,8 @@ public class Stage2Test {
                 "123",
                 "0912345",
                 "09179998888",
-                "99",
-                "1",
+                "   ",
+                "Villa Lourdes Dorm",
                 "   ",
                 "305-B"
         ) + "\n";

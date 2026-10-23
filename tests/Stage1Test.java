@@ -63,12 +63,14 @@ public class Stage1Test {
         assertTrue("Invalid: non-digits '0917123456a'", !Validator.isValidContact("0917123456a"));
         assertTrue("Null contact is invalid", !Validator.isValidContact(null));
 
-        // isValidDorm
-        assertTrue("Known dorm 'Villa Lourdes Dorm' is valid", Validator.isValidDorm("Villa Lourdes Dorm"));
-        assertTrue("Known dorm case-insensitive 'villa lourdes dorm'", Validator.isValidDorm("villa lourdes dorm"));
-        assertTrue("Known dorm 'Green Residences' is valid", Validator.isValidDorm("Green Residences"));
-        assertTrue("Unknown dorm 'Random Dormitory' is invalid", !Validator.isValidDorm("Random Dormitory"));
+        // isValidDorm (Custom dormitories)
+        assertTrue("Custom dorm 'Villa Lourdes Dorm' is valid", Validator.isValidDorm("Villa Lourdes Dorm"));
+        assertTrue("Custom dorm 'Emerald Heights Dorm' is valid", Validator.isValidDorm("Emerald Heights Dorm"));
+        assertTrue("Empty dorm name is invalid", !Validator.isValidDorm(""));
+        assertTrue("Whitespace dorm name is invalid", !Validator.isValidDorm("   "));
         assertTrue("Null dorm is invalid", !Validator.isValidDorm(null));
+        assertTrue("Dorm list check matched", Validator.isValidDorm("Villa Lourdes Dorm", new String[]{"Villa Lourdes Dorm"}));
+        assertTrue("Dorm list check unmatched", !Validator.isValidDorm("Random Dormitory", new String[]{"Villa Lourdes Dorm"}));
 
         // isValidRoom
         assertTrue("Room '101-A' is valid", Validator.isValidRoom("101-A"));

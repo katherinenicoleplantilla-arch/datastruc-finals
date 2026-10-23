@@ -38,11 +38,11 @@ public class LaundrySystem {
     public static final double PRICE_PER_LOAD = 220.0;  // Php 220 per load
     public static final int TRIKE_CAPACITY = 10;        // Maximum 10 loads per tricycle delivery run
     public static final int LATE_HOURS = 3;             // 3 hours threshold for flagging ready orders as late
-    public static final String[] DORMS = Validator.DORMS; // Lipa City student dormitories
 
     // --- Data Structures ---
     private List<Customer> customers;          // All registered customers (ArrayList)
     private List<Order> orders;                // All orders, stored in Order ID order (ArrayList)
+    private List<String> dorms;                // Dynamic list of custom dormitories registered by staff (ArrayList)
     private Queue<Order> washingQueue;         // FIFO washing queue (LinkedList)
     private Queue<Customer> pickupQueue;       // FIFO pickup requests queue (LinkedList)
     private Queue<Stop> stopQueue;             // FIFO delivery stop queue (LinkedList)
@@ -70,6 +70,7 @@ public class LaundrySystem {
     public LaundrySystem(Scanner scanner) {
         this.customers = new ArrayList<>();
         this.orders = new ArrayList<>();
+        this.dorms = new ArrayList<>();
         this.washingQueue = new LinkedList<>();
         this.pickupQueue = new LinkedList<>();
         this.stopQueue = new LinkedList<>();
@@ -117,6 +118,36 @@ public class LaundrySystem {
     }
 
     /**
+     * Registers a custom dormitory name in the system's dynamic dorms list.
+     * Prevents case-insensitive duplicates.
+     *
+     * @param dormName the dormitory name to register
+     * @return true if added, false if already exists or invalid
+     */
+    public boolean addCustomDorm(String dormName) {
+        if (!Validator.isValidDorm(dormName)) {
+            return false;
+        }
+        String trimmed = dormName.trim();
+        for (String d : dorms) {
+            if (d.equalsIgnoreCase(trimmed)) {
+                return false; // Already registered
+            }
+        }
+        dorms.add(trimmed);
+        return true;
+    }
+
+    /**
+     * Returns the dynamic list of custom dormitories registered by staff.
+     *
+     * @return list of dormitory names
+     */
+    public List<String> getDorms() {
+        return dorms;
+    }
+
+    /**
      * Helper to read a trimmed line of text from the console.
      *
      * @param prompt prompt message to display
@@ -161,28 +192,45 @@ public class LaundrySystem {
             }
         } while (!Validator.isValidContact(contact));
 
-        // Display known dormitories and validate selection
-        System.out.println("\nAvailable Dormitories in Lipa City:");
-        for (int i = 0; i < DORMS.length; i++) {
-            System.out.printf("  [%d] %s\n", (i + 1), DORMS[i]);
-        }
-
+        // Read and validate dormitory (select from registered dorms or enter a new custom dorm)
         String dorm = "";
         do {
-            String dormInput = promptLine("Select Dormitory (enter number 1-" + DORMS.length + " or full name): ");
-            try {
-                int idx = Integer.parseInt(dormInput);
-                if (idx >= 1 && idx <= DORMS.length) {
-                    dorm = DORMS[idx - 1];
+            if (!dorms.isEmpty()) {
+                System.out.println("\nRegistered Dormitories:");
+                for (int i = 0; i < dorms.size(); i++) {
+                    System.out.printf("  [%d] %s\n", (i + 1), dorms.get(i));
                 }
-            } catch (NumberFormatException ignored) {
-                // Not a number, check name string
-            }
-            if (dorm.isEmpty() && Validator.isValidDorm(dormInput)) {
-                dorm = dormInput;
-            }
-            if (dorm.isEmpty()) {
-                System.out.println(">> Invalid Dormitory! Please pick from the list of known dorms.");
+                String dormInput = promptLine("Enter Dormitory Name (select 1-" + dorms.size() + " or type a custom dorm): ");
+                if (dormInput.isEmpty()) {
+                    System.out.println(">> Invalid Dormitory! Dormitory name cannot be blank.");
+                    continue;
+                }
+
+                boolean isNumber = false;
+                try {
+                    int idx = Integer.parseInt(dormInput);
+                    isNumber = true;
+                    if (idx >= 1 && idx <= dorms.size()) {
+                        dorm = dorms.get(idx - 1);
+                    } else {
+                        System.out.printf(">> Invalid selection! Please enter a number between 1 and %d, or type a custom dorm name.\n", dorms.size());
+                    }
+                } catch (NumberFormatException e) {
+                    // Not a number, treat as custom dorm name
+                }
+
+                if (!isNumber && Validator.isValidDorm(dormInput)) {
+                    dorm = dormInput.trim();
+                    addCustomDorm(dorm);
+                }
+            } else {
+                String dormInput = promptLine("Enter Custom Dormitory Name: ");
+                if (Validator.isValidDorm(dormInput)) {
+                    dorm = dormInput.trim();
+                    addCustomDorm(dorm);
+                } else {
+                    System.out.println(">> Invalid Dormitory! Dormitory name cannot be blank.");
+                }
             }
         } while (dorm.isEmpty());
 
@@ -1282,6 +1330,7 @@ public class LaundrySystem {
         // Clear existing state to start clean demonstration
         customers.clear();
         orders.clear();
+        dorms.clear();
         washingQueue.clear();
         pickupQueue.clear();
         stopQueue.clear();
@@ -1302,6 +1351,13 @@ public class LaundrySystem {
         customers.add(c4);
         customers.add(c5);
         this.customerCounter = 5;
+
+        // Register custom dorms from sample customers
+        addCustomDorm(c1.getDorm());
+        addCustomDorm(c2.getDorm());
+        addCustomDorm(c3.getDorm());
+        addCustomDorm(c4.getDorm());
+        addCustomDorm(c5.getDorm());
 
         LocalDateTime now = LocalDateTime.now();
 
