@@ -16,26 +16,14 @@ A Java console application developed for **QMAR Laundry Shop**, located inside V
 
 ## Compilation and Execution
 
-### 1. Compile the Application
-From the project root directory, run:
+From the project root directory, compile all source files:
 ```bash
 javac *.java
 ```
 
-### 2. Run the Application
-Launch the console UI:
+Then launch the console application:
 ```bash
 java Main
-```
-
-### 3. Run Automated Tests
-All automated test harnesses are organized in the `tests/` directory:
-```bash
-javac -cp . tests/*.java
-java -cp ".;tests" EndToEndTest
-java -cp ".;tests" Stage1Test
-java -cp ".;tests" Stage2Test
-java -cp ".;tests" Stage3Test
 ```
 
 ---
