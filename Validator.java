@@ -10,6 +10,9 @@ import java.util.List;
  */
 public class Validator {
 
+    // Maximum realistic laundry weight in kilograms for a single customer order
+    public static final double MAX_WEIGHT_KG = 1000.0;
+
     // Private constructor to prevent instantiation of utility class
     private Validator() {}
 
@@ -99,27 +102,36 @@ public class Validator {
     }
 
     /**
-     * Validates that a laundry weight is strictly greater than 0.
+     * Validates that a laundry weight is a finite number, strictly greater than 0,
+     * and does not exceed the maximum realistic threshold (MAX_WEIGHT_KG).
      *
      * @param weight weight in kilograms
-     * @return true if weight > 0, false otherwise
+     * @return true if finite and within (0, MAX_WEIGHT_KG], false otherwise
      */
     public static boolean isValidWeight(double weight) {
-        return weight > 0.0;
+        return Double.isFinite(weight) && weight > 0.0 && weight <= MAX_WEIGHT_KG;
     }
 
     /**
-     * Validates a string representation of weight, catching NumberFormatException.
+     * Validates a string representation of weight (resolves issue #2).
+     * Matches the input against a plain-number regex (^\\d+(\\.\\d+)?$)
+     * to strictly reject hex floats ("0x1p4"), scientific notation ("1e300"),
+     * type suffixes ("5d"), negative values, and non-numeric literals ("Infinity").
+     * Also verifies that the parsed value is finite, > 0, and <= MAX_WEIGHT_KG.
      *
      * @param weightStr raw string input for weight
-     * @return true if numeric and > 0, false otherwise
+     * @return true if plain numeric format and within valid range, false otherwise
      */
     public static boolean isValidWeight(String weightStr) {
-        if (weightStr == null || weightStr.trim().isEmpty()) {
+        if (weightStr == null) {
+            return false;
+        }
+        String trimmed = weightStr.trim();
+        if (!trimmed.matches("^\\d+(\\.\\d+)?$")) {
             return false;
         }
         try {
-            double w = Double.parseDouble(weightStr.trim());
+            double w = Double.parseDouble(trimmed);
             return isValidWeight(w);
         } catch (NumberFormatException e) {
             return false;

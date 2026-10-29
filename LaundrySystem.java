@@ -320,20 +320,17 @@ public class LaundrySystem {
         System.out.printf("Customer: %s (%s, Room %s)\n",
                 customer.getName(), customer.getDorm(), customer.getRoomNumber());
 
-        // Read and validate weight (> 0)
+        // Read and validate weight (plain decimal number, > 0 and <= MAX_WEIGHT_KG, resolves issue #2)
         double weight = 0.0;
         do {
             String weightStr = promptLine("Enter Laundry Weight (kg): ");
-            try {
-                weight = Double.parseDouble(weightStr);
-                if (!Validator.isValidWeight(weight)) {
-                    System.out.println("Invalid Weight");
-                }
-            } catch (NumberFormatException e) {
+            if (!Validator.isValidWeight(weightStr)) {
                 System.out.println("Invalid Weight");
                 weight = 0.0;
+            } else {
+                weight = Double.parseDouble(weightStr.trim());
             }
-        } while (!Validator.isValidWeight(weight));
+        } while (weight <= 0.0);
 
         // Choose Receive Method
         ReceiveMethod receiveMethod = null;
