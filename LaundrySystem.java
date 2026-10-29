@@ -1,4 +1,4 @@
-﻿import java.time.Duration;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -1324,12 +1324,36 @@ public class LaundrySystem {
         UndoAction action = undoStack.pop();
         Order order = action.getOrder();
 
-        if (UndoAction.PAYMENT.equals(action.getType())) {
-            order.setPaymentStatus(PaymentStatus.UNPAID);
-            order.setPaymentMethod(null);
-        } else if (UndoAction.MARK_READY.equals(action.getType())) {
+        if (order == null) {
+            System.out.println("Cannot undo: order record not found.");
+            return;
+        }
+
+        if (UndoAction.MARK_READY.equals(action.getType())) {
+            // Only allow undo if current status matches what Mark Ready produced (READY)
+            if (order.getLaundryStatus() != LaundryStatus.READY) {
+                System.out.printf(">> Cannot undo Mark Ready: Order %s status has changed to %s (expected READY).\n",
+                        order.getOrderId(), order.getLaundryStatus());
+                return;
+            }
             order.setLaundryStatus(LaundryStatus.PROCESSING);
             order.setTimeReady(null);
+        } else if (UndoAction.PAYMENT.equals(action.getType())) {
+            // Only allow undo if the order is still PAID and its status matches what it was when logged
+            if (order.getPaymentStatus() != PaymentStatus.PAID) {
+                System.out.printf(">> Cannot undo payment: Order %s is not marked PAID.\n",
+                        order.getOrderId());
+                return;
+            }
+            if (order.getLaundryStatus() == LaundryStatus.COMPLETED ||
+                    order.getLaundryStatus() == LaundryStatus.OUT_FOR_DELIVERY ||
+                    order.getLaundryStatus() != action.getExpectedLaundryStatus()) {
+                System.out.printf(">> Cannot undo payment: Order %s status has changed to %s.\n",
+                        order.getOrderId(), order.getLaundryStatus());
+                return;
+            }
+            order.setPaymentStatus(PaymentStatus.UNPAID);
+            order.setPaymentMethod(null);
         }
 
         System.out.printf("Last action undone: %s\n", action.getDescription());
