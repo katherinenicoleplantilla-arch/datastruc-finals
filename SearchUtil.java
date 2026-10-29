@@ -4,7 +4,8 @@ import java.util.List;
  * Utility class providing searching algorithms for QMAR Laundry Shop.
  * Implements:
  * 1. Linear Search for Customer lookups (by Customer ID, Name, or Contact Number).
- * 2. Binary Search for Order lookups (by Order ID on a list maintained in sorted order).
+ * 2. Strict ID/Contact lookups to prevent misattributing orders and warn on duplicate records.
+ * 3. Binary Search for Order lookups (by Order ID on a list maintained in sorted order).
  *
  * Conforms strictly to project rules: hand-coded algorithms with no library searching.
  */
@@ -17,6 +18,7 @@ public class SearchUtil {
      * Performs a linear search over the customers list to locate a customer
      * matching the given search query by Customer ID, Name, or Contact Number.
      * The search is case-insensitive and trims surrounding whitespace.
+     * Used primarily by Menu 10a (General Search Customer).
      *
      * Time Complexity: O(n) where n is the number of registered customers.
      * Space Complexity: O(1) auxiliary space.
@@ -45,6 +47,57 @@ public class SearchUtil {
             }
         }
         return null; // No match found after inspecting all elements
+    }
+
+    /**
+     * Performs a linear search strictly by unique Customer ID (resolves issue #3).
+     * Used when creating orders and logging pickups so that duplicate customer names
+     * never result in orders being misattributed to another student.
+     *
+     * @param customers  the list of registered customers
+     * @param customerId the unique Customer ID (e.g. "C001")
+     * @return the matched Customer object, or null if not found
+     */
+    public static Customer findCustomerById(List<Customer> customers, String customerId) {
+        if (customers == null || customerId == null) {
+            return null;
+        }
+        String targetId = customerId.trim();
+        if (targetId.isEmpty()) {
+            return null;
+        }
+
+        for (Customer c : customers) {
+            if (c != null && c.getCustomerId() != null && c.getCustomerId().equalsIgnoreCase(targetId)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Performs a linear search to locate a customer matching an exact contact number.
+     * Used during customer registration to detect and warn about duplicate contact numbers.
+     *
+     * @param customers the list of registered customers
+     * @param contact   the 11-digit mobile number
+     * @return the matched Customer object with this contact number, or null if none
+     */
+    public static Customer findCustomerByContact(List<Customer> customers, String contact) {
+        if (customers == null || contact == null) {
+            return null;
+        }
+        String targetContact = contact.trim();
+        if (targetContact.isEmpty()) {
+            return null;
+        }
+
+        for (Customer c : customers) {
+            if (c != null && c.getContactNumber() != null && c.getContactNumber().trim().equals(targetContact)) {
+                return c;
+            }
+        }
+        return null;
     }
 
     /**

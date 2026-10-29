@@ -119,6 +119,26 @@ public class LaundrySystem {
     }
 
     /**
+     * Finds a customer strictly by unique Customer ID (resolves issue #3).
+     *
+     * @param customerId the customer ID (e.g. C001)
+     * @return matched Customer object, or null if not found
+     */
+    public Customer findCustomerById(String customerId) {
+        return SearchUtil.findCustomerById(this.customers, customerId);
+    }
+
+    /**
+     * Finds a customer by contact number to detect duplicates.
+     *
+     * @param contactNumber the 11-digit mobile number
+     * @return matched Customer object, or null if none
+     */
+    public Customer findCustomerByContact(String contactNumber) {
+        return SearchUtil.findCustomerByContact(this.customers, contactNumber);
+    }
+
+    /**
      * Registers a custom dormitory name in the system's dynamic dorms list.
      * Prevents case-insensitive duplicates.
      *
@@ -187,6 +207,15 @@ public class LaundrySystem {
             }
         } while (!Validator.isValidName(name));
 
+        // Check if a customer with the same name already exists and notify staff
+        for (Customer c : this.customers) {
+            if (c != null && c.getName() != null && c.getName().equalsIgnoreCase(name.trim())) {
+                System.out.printf(">> Notice: Another customer named \"%s\" is already registered (ID: %s, Dorm: %s R%s).\n",
+                        c.getName(), c.getCustomerId(), c.getDorm(), c.getRoomNumber());
+                break;
+            }
+        }
+
         // Read and validate 11-digit mobile number starting with 09
         String contact;
         do {
@@ -195,6 +224,13 @@ public class LaundrySystem {
                 System.out.println(">> Invalid Contact! Must be exactly 11 digits starting with 09.");
             }
         } while (!Validator.isValidContact(contact));
+
+        // Check for duplicate contact number and warn staff (resolves issue #3)
+        Customer existingWithContact = findCustomerByContact(contact);
+        if (existingWithContact != null) {
+            System.out.printf(">> Warning: Contact number %s is already registered to %s (ID: %s).\n",
+                    contact, existingWithContact.getName(), existingWithContact.getCustomerId());
+        }
 
         // Read and validate dormitory (select from registered dorms or enter a new custom dorm)
         String dorm = "";
@@ -274,7 +310,7 @@ public class LaundrySystem {
         System.out.println("--------------------------------------------------");
 
         String customerId = promptLine("Enter Customer ID: ");
-        Customer customer = SearchUtil.linearSearchCustomer(this.customers, customerId);
+        Customer customer = findCustomerById(customerId);
 
         if (customer == null) {
             System.out.println("Customer not found!");
@@ -591,7 +627,7 @@ public class LaundrySystem {
     public void logPickupRequest() {
         System.out.println("\n--- Log Pickup Request ---");
         String customerId = promptLine("Enter Customer ID: ");
-        Customer customer = SearchUtil.linearSearchCustomer(this.customers, customerId);
+        Customer customer = findCustomerById(customerId);
 
         if (customer == null) {
             System.out.println("Customer not found!");
