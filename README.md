@@ -1,4 +1,4 @@
-# QMAR Laundry Order Management System
+git # QMAR Laundry Order Management System
 
 A Java console application developed for **QMAR Laundry Shop**, located inside Villa Lourdes, Barangay Mataas na Lupa, Lipa City. The shop serves students from nearby universities and dormitories, offering laundry management from intake to washing, drying, payment processing, pickup queuing, tricycle delivery routing, and reporting.
 
