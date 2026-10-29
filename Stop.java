@@ -1,3 +1,4 @@
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -5,6 +6,8 @@ import java.util.List;
  * Represents a single delivery stop for a specific dormitory during a trike delivery run.
  * Aggregates all orders scheduled for delivery to that dormitory and tracks their cumulative loads
  * to enforce the tricycle capacity limit (10 loads maximum per run).
+ *
+ * Provides deadline inspection to allow delivery route prioritization by urgency.
  */
 public class Stop {
     private String dorm;              // Dormitory/building name for this stop
@@ -35,6 +38,27 @@ public class Stop {
     }
 
     /**
+     * Returns the earliest delivery deadline among all orders in this stop.
+     * Returns null if none of the orders have a delivery deadline specified.
+     *
+     * @return earliest LocalTime deadline, or null if none
+     */
+    public LocalTime getEarliestDeadline() {
+        LocalTime earliest = null;
+        for (Order o : orders) {
+            if (o != null) {
+                LocalTime d = o.getDeliveryDeadline();
+                if (d != null) {
+                    if (earliest == null || d.isBefore(earliest)) {
+                        earliest = d;
+                    }
+                }
+            }
+        }
+        return earliest;
+    }
+
+    /**
      * Returns the total loads aggregated at this stop.
      *
      * @return total loads
@@ -57,6 +81,7 @@ public class Stop {
                 "dorm='" + dorm + '\'' +
                 ", ordersCount=" + orders.size() +
                 ", totalLoads=" + totalLoads +
+                ", earliestDeadline=" + getEarliestDeadline() +
                 '}';
     }
 }
