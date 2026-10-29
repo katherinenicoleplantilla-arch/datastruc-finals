@@ -1,4 +1,4 @@
-import java.time.Duration;
+﻿import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -678,6 +678,15 @@ public class LaundrySystem {
         System.out.println("              DISPATCH DELIVERY TRIKE             ");
         System.out.println("--------------------------------------------------");
 
+        // Guard: refuse to dispatch while a run is still active
+        if (!trikeStack.isEmpty()) {
+            System.out.printf(
+                ">> Cannot dispatch: %d stop(s) are still on the trike from the current run.%n" +
+                "   Use option [8] Deliver Next Stop to complete all remaining stops first.%n",
+                trikeStack.size());
+            return;
+        }
+
         // 1. Filter orders that are READY and DELIVERY
         List<Order> readyDeliveryOrders = new ArrayList<>();
         for (Order o : this.orders) {
@@ -702,7 +711,6 @@ public class LaundrySystem {
         }
 
         // 4. Enqueue created stops into stopQueue (FIFO)
-        stopQueue.clear();
         for (Stop s : stops) {
             stopQueue.add(s);
         }
@@ -714,7 +722,6 @@ public class LaundrySystem {
         }
 
         // 6. Push stops onto trikeStack in reverse order (LIFO) so 1st stop ends up on top
-        trikeStack.clear();
         for (int k = tempStops.size() - 1; k >= 0; k--) {
             trikeStack.push(tempStops.get(k));
         }
