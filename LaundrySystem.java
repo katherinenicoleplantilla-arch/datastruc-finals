@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Scanner;
 
@@ -149,16 +150,19 @@ public class LaundrySystem {
 
     /**
      * Helper to read a trimmed line of text from the console.
+     * Throws NoSuchElementException when the input stream ends
+     * to prevent infinite loops in interactive sub-prompts.
      *
      * @param prompt prompt message to display
      * @return trimmed user input
+     * @throws NoSuchElementException if end of input stream is reached
      */
     private String promptLine(String prompt) {
         System.out.print(prompt);
         if (scanner.hasNextLine()) {
             return scanner.nextLine().trim();
         }
-        return "";
+        throw new NoSuchElementException("End of input stream reached.");
     }
 
     // =========================================================================
