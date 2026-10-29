@@ -327,6 +327,16 @@ public class LaundrySystem {
             }
         } while (returnMethod == null);
 
+        // Reject DELIVERY if the order alone exceeds trike capacity
+        int previewLoadsCheck = (int) Math.ceil(weight / KG_PER_LOAD);
+        if (returnMethod == ReturnMethod.DELIVERY && previewLoadsCheck > TRIKE_CAPACITY) {
+            System.out.printf(
+                ">> This order is %d loads (%.1f kg), which exceeds the trike capacity of %d loads (%d kg).%n" +
+                "   Delivery is not available for oversized orders. Return method changed to CLAIM.%n",
+                previewLoadsCheck, weight, TRIKE_CAPACITY, (int)(TRIKE_CAPACITY * KG_PER_LOAD));
+            returnMethod = ReturnMethod.CLAIM;
+        }
+
         // Optional Delivery Deadline (only for Delivery)
         LocalTime deliveryDeadline = null;
         if (returnMethod == ReturnMethod.DELIVERY) {
@@ -626,24 +636,29 @@ public class LaundrySystem {
             Order firstOrder = sortedOrders.get(i);
             String currentDorm = firstOrder.getCustomer().getDorm();
 
-            // Check if adding this order exceeds trike capacity
-            if (loadCount + firstOrder.getLoads() > TRIKE_CAPACITY) {
-                System.out.printf(">> Trike capacity limit reached (%d/%d loads). Remaining orders will be scheduled for next run.\n",
-                        loadCount, TRIKE_CAPACITY);
-                break;
-            }
-
             Stop currentStop = new Stop(currentDorm);
 
-            // Nested loop: group consecutive orders belonging to the same dorm
+            // Nested loop: consume all orders belonging to the current dorm
             while (i < sortedOrders.size()) {
                 Order order = sortedOrders.get(i);
                 if (!order.getCustomer().getDorm().equalsIgnoreCase(currentDorm)) {
-                    break; // Next dormitory reached
+                    break; // Moved to the next dormitory; exit inner loop
                 }
+                // Skip orders that alone exceed the full trike capacity -
+                // they can never fit in any run and must not block other dorms
+                if (order.getLoads() > TRIKE_CAPACITY) {
+                    System.out.printf(
+                        ">> Order %s skipped: %d load(s) exceeds trike capacity of %d. Change to CLAIM.%n",
+                        order.getOrderId(), order.getLoads(), TRIKE_CAPACITY);
+                    i++;
+                    continue;
+                }
+                // Once adding the next order would overflow the trike, stop this run
+                // and defer the remaining orders to the next dispatch
                 if (loadCount + order.getLoads() > TRIKE_CAPACITY) {
-                    System.out.printf(">> Trike capacity limit reached (%d/%d loads). Remaining orders will be scheduled for next run.\n",
-                            loadCount, TRIKE_CAPACITY);
+                    System.out.printf(
+                        ">> Trike capacity limit reached (%d/%d loads). Remaining orders deferred to next run.%n",
+                        loadCount, TRIKE_CAPACITY);
                     break;
                 }
                 currentStop.addOrder(order);
@@ -655,8 +670,8 @@ public class LaundrySystem {
                 stops.add(currentStop);
             }
 
-            // If capacity limit stopped inner loop, terminate grouping
-            if (i < sortedOrders.size() && (loadCount + sortedOrders.get(i).getLoads() > TRIKE_CAPACITY)) {
+            // If the trike is now full, stop building stops for this run
+            if (loadCount >= TRIKE_CAPACITY) {
                 break;
             }
         }
