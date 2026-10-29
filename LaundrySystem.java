@@ -6,8 +6,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
 
@@ -155,10 +157,10 @@ public class LaundrySystem {
      */
     private String promptLine(String prompt) {
         System.out.print(prompt);
-        if (scanner.hasNextLine()) {
-            return scanner.nextLine().trim();
+        if (!scanner.hasNextLine()) {
+            throw new java.util.NoSuchElementException("End of input reached");
         }
-        return "";
+        return scanner.nextLine().trim();
     }
 
     // =========================================================================
@@ -280,15 +282,17 @@ public class LaundrySystem {
         System.out.printf("Customer: %s (%s, Room %s)\n",
                 customer.getName(), customer.getDorm(), customer.getRoomNumber());
 
-        // Read and validate weight (> 0)
+        // Read and validate weight (plain number > 0 and <= MAX_WEIGHT)
         double weight = 0.0;
         do {
             String weightStr = promptLine("Enter Laundry Weight (kg): ");
+            if (!Validator.isValidWeight(weightStr)) {
+                System.out.println("Invalid Weight");
+                weight = 0.0;
+                continue;
+            }
             try {
-                weight = Double.parseDouble(weightStr);
-                if (!Validator.isValidWeight(weight)) {
-                    System.out.println("Invalid Weight");
-                }
+                weight = Double.parseDouble(weightStr.trim());
             } catch (NumberFormatException e) {
                 System.out.println("Invalid Weight");
                 weight = 0.0;
@@ -634,14 +638,22 @@ public class LaundrySystem {
         // Outer loop: iterate across distinct dorm groups
         while (i < sortedOrders.size()) {
             Order firstOrder = sortedOrders.get(i);
-            String currentDorm = firstOrder.getCustomer().getDorm();
+            String currentDorm = (firstOrder != null && firstOrder.getCustomer() != null && firstOrder.getCustomer().getDorm() != null)
+                    ? firstOrder.getCustomer().getDorm() : "";
 
             Stop currentStop = new Stop(currentDorm);
 
+            boolean capacityReached = false;
             // Nested loop: consume all orders belonging to the current dorm
             while (i < sortedOrders.size()) {
                 Order order = sortedOrders.get(i);
-                if (!order.getCustomer().getDorm().equalsIgnoreCase(currentDorm)) {
+                if (order == null) {
+                    i++;
+                    continue;
+                }
+                String orderDorm = (order.getCustomer() != null && order.getCustomer().getDorm() != null)
+                        ? order.getCustomer().getDorm() : "";
+                if (!orderDorm.equalsIgnoreCase(currentDorm)) {
                     break; // Moved to the next dormitory; exit inner loop
                 }
                 // Skip orders that alone exceed the full trike capacity -
@@ -659,6 +671,7 @@ public class LaundrySystem {
                     System.out.printf(
                         ">> Trike capacity limit reached (%d/%d loads). Remaining orders deferred to next run.%n",
                         loadCount, TRIKE_CAPACITY);
+                    capacityReached = true;
                     break;
                 }
                 currentStop.addOrder(order);
@@ -670,8 +683,8 @@ public class LaundrySystem {
                 stops.add(currentStop);
             }
 
-            // If the trike is now full, stop building stops for this run
-            if (loadCount >= TRIKE_CAPACITY) {
+            // If the capacity limit was reached or trike is full, stop building stops for this run
+            if (capacityReached || loadCount >= TRIKE_CAPACITY) {
                 break;
             }
         }
@@ -715,33 +728,48 @@ public class LaundrySystem {
             return;
         }
 
-        // 2. Merge sort orders by dorm name
-        List<Order> sortedByDorm = SortUtil.mergeSort(readyDeliveryOrders, SortUtil.BY_DORM);
+        // 2. Precompute earliest deadline per dormitory to prioritize urgent delivery stops
+        Map<String, LocalTime> dormDeadlines = new HashMap<>();
+        for (Order o : readyDeliveryOrders) {
+            if (o.getCustomer() != null && o.getCustomer().getDorm() != null) {
+                String dormKey = o.getCustomer().getDorm().toLowerCase();
+                LocalTime dl = o.getDeliveryDeadline();
+                if (dl != null) {
+                    if (!dormDeadlines.containsKey(dormKey) || dl.isBefore(dormDeadlines.get(dormKey))) {
+                        dormDeadlines.put(dormKey, dl);
+                    }
+                }
+            }
+        }
 
-        // 3. Build dorm-grouped stops enforcing the 10-load limit
-        List<Stop> stops = buildStops(sortedByDorm);
+        // 3. Merge sort delivery orders by urgency:
+        //    Dorm earliest deadline ascending (nulls last) -> dorm name A-Z -> individual order deadline ascending
+        List<Order> prioritizedOrders = SortUtil.mergeSort(readyDeliveryOrders, SortUtil.byDeliveryPriority(dormDeadlines));
+
+        // 4. Build dorm-grouped stops enforcing the 10-load limit
+        List<Stop> stops = buildStops(prioritizedOrders);
         if (stops.isEmpty()) {
             System.out.println("No stops could be formed within capacity limit.");
             return;
         }
 
-        // 4. Enqueue created stops into stopQueue (FIFO)
+        // 5. Enqueue created stops into stopQueue (FIFO)
         for (Stop s : stops) {
             stopQueue.add(s);
         }
 
-        // 5. Transfer stops from stopQueue to a temporary list
+        // 6. Transfer stops from stopQueue to a temporary list
         List<Stop> tempStops = new ArrayList<>();
         while (!stopQueue.isEmpty()) {
             tempStops.add(stopQueue.poll());
         }
 
-        // 6. Push stops onto trikeStack in reverse order (LIFO) so 1st stop ends up on top
+        // 7. Push stops onto trikeStack in reverse order (LIFO) so 1st stop ends up on top
         for (int k = tempStops.size() - 1; k >= 0; k--) {
             trikeStack.push(tempStops.get(k));
         }
 
-        // 7. Update status of included orders to OUT_FOR_DELIVERY
+        // 8. Update status of included orders to OUT_FOR_DELIVERY
         int totalRunLoads = 0;
         int totalRunOrders = 0;
         for (Stop s : tempStops) {
@@ -752,23 +780,31 @@ public class LaundrySystem {
             }
         }
 
-        // 8. Add dispatched run to deliveryLog
+        // 9. Add dispatched run to deliveryLog
         deliveryLog.add(new ArrayList<>(tempStops));
 
-        // 9. Display run summary
+        // 10. Display run summary
         System.out.println("--------------------------------------------------");
         System.out.printf("Tricycle Dispatched Successfully! (Run #%d)\n", deliveryLog.size());
         System.out.printf("Total Stops: %d | Total Orders: %d | Total Loads: %d / %d loads\n",
                 tempStops.size(), totalRunOrders, totalRunLoads, TRIKE_CAPACITY);
         System.out.println("Delivery Route Order (LIFO physical trike unloading):");
         int stopNum = 1;
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
         for (Stop s : tempStops) {
-            System.out.printf("  Stop %d: %s (%d load(s), %d order(s))\n",
-                    stopNum++, s.getDorm(), s.getTotalLoads(), s.getOrders().size());
+            LocalTime earliest = s.getEarliestDeadline();
+            String deadlineBadge = (earliest != null)
+                    ? String.format(" [Earliest Deadline: %s]", earliest.format(timeFmt))
+                    : " [No Deadline]";
+            System.out.printf("  Stop %d: %s (%d load(s), %d order(s))%s\n",
+                    stopNum++, s.getDorm(), s.getTotalLoads(), s.getOrders().size(), deadlineBadge);
             for (Order o : s.getOrders()) {
-                System.out.printf("    - [%s] %s | Room %s | Php %.2f | %s\n",
+                String dl = (o.getDeliveryDeadline() != null)
+                        ? "Deadline: " + o.getDeliveryDeadline().format(timeFmt)
+                        : "No deadline";
+                System.out.printf("    - [%s] %s | Room %s | Php %.2f | %s | %s\n",
                         o.getOrderId(), o.getCustomer().getName(), o.getCustomer().getRoomNumber(),
-                        o.getTotalAmount(), o.getPaymentStatus());
+                        o.getTotalAmount(), o.getPaymentStatus(), dl);
             }
         }
         System.out.println("--------------------------------------------------");
@@ -879,17 +915,15 @@ public class LaundrySystem {
 
             order.setPaymentStatus(PaymentStatus.PAID);
             order.setPaymentMethod(method);
-
-            String desc = String.format("Payment of Php %.2f on claim for Order %s",
-                    order.getTotalAmount(), order.getOrderId());
-            undoStack.push(new UndoAction(UndoAction.PAYMENT, order, desc));
             System.out.printf("Payment recorded! Amount: Php %.2f\n", order.getTotalAmount());
         }
 
         // Mark order completed
         order.setLaundryStatus(LaundryStatus.COMPLETED);
+        String custName = (order.getCustomer() != null && order.getCustomer().getName() != null)
+                ? order.getCustomer().getName() : "Customer";
         System.out.printf("Order %s has been successfully claimed by %s and marked COMPLETED!\n",
-                order.getOrderId(), order.getCustomer().getName());
+                order.getOrderId(), custName);
         System.out.println("--------------------------------------------------");
     }
 
@@ -941,7 +975,8 @@ public class LaundrySystem {
         System.out.println("  Order History:");
         boolean hasOrders = false;
         for (Order o : this.orders) {
-            if (o.getCustomer().getCustomerId().equalsIgnoreCase(c.getCustomerId())) {
+            if (o != null && o.getCustomer() != null && o.getCustomer().getCustomerId() != null
+                    && o.getCustomer().getCustomerId().equalsIgnoreCase(c.getCustomerId())) {
                 hasOrders = true;
                 System.out.printf("    - [%s] %.1f kg (%d loads) | Php %.2f | %s | %s\n",
                         o.getOrderId(), o.getWeightKg(), o.getLoads(), o.getTotalAmount(),
@@ -1045,22 +1080,43 @@ public class LaundrySystem {
     }
 
     /**
+     * Helper to repeat a character sequence, ensuring universal Java version compatibility (Java 8 to 25+).
+     *
+     * @param str   string to repeat
+     * @param count number of times to repeat
+     * @return repeated string
+     */
+    private static String repeat(String str, int count) {
+        if (str == null || count <= 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(str.length() * count);
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Formats and prints a list of orders in an ASCII tabular structure.
      *
      * @param list list of orders to print
      */
     private void printOrdersTable(List<Order> list) {
-        System.out.println("\n" + "=".repeat(120));
+        System.out.println("\n" + repeat("=", 120));
         System.out.printf("%-9s | %-16s | %-18s | %-5s | %-5s | %-9s | %-10s | %-16s | %-8s | %-8s\n",
                 "Order ID", "Customer", "Dormitory & Room", "Kg", "Loads", "Total Php", "Return", "Status", "Payment", "Deadline");
-        System.out.println("-".repeat(120));
+        System.out.println(repeat("-", 120));
 
         DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
         for (Order o : list) {
-            String customerName = o.getCustomer().getName();
+            String customerName = (o.getCustomer() != null && o.getCustomer().getName() != null)
+                    ? o.getCustomer().getName() : "Unknown";
             if (customerName.length() > 16) customerName = customerName.substring(0, 13) + "...";
 
-            String dormRoom = o.getCustomer().getDorm() + " R" + o.getCustomer().getRoomNumber();
+            String dorm = (o.getCustomer() != null && o.getCustomer().getDorm() != null) ? o.getCustomer().getDorm() : "Unknown";
+            String room = (o.getCustomer() != null && o.getCustomer().getRoomNumber() != null) ? o.getCustomer().getRoomNumber() : "-";
+            String dormRoom = dorm + " R" + room;
             if (dormRoom.length() > 18) dormRoom = dormRoom.substring(0, 15) + "...";
 
             String deadline = (o.getDeliveryDeadline() != null) ? o.getDeliveryDeadline().format(timeFmt) : "--";
@@ -1070,7 +1126,7 @@ public class LaundrySystem {
                     o.getWeightKg(), o.getLoads(), o.getTotalAmount(),
                     o.getReturnMethod(), o.getLaundryStatus(), o.getPaymentStatus(), deadline);
         }
-        System.out.println("=".repeat(120));
+        System.out.println(repeat("=", 120));
         System.out.printf("Total Orders Shown: %d\n", list.size());
     }
 
@@ -1138,7 +1194,7 @@ public class LaundrySystem {
         LocalDateTime now = LocalDateTime.now();
         System.out.printf("%-9s | %-16s | %-10s | %-12s | %-18s\n",
                 "Order ID", "Customer", "Loads", "Status", "Waiting / Elapsed");
-        System.out.println("-".repeat(75));
+        System.out.println(repeat("-", 75));
 
         for (Order o : active) {
             String elapsed = "In Washing Line";
@@ -1147,11 +1203,13 @@ public class LaundrySystem {
             } else if (o.getLaundryStatus() == LaundryStatus.READY && o.getTimeReady() != null) {
                 Duration d = Duration.between(o.getTimeReady(), now);
                 long hours = d.toHours();
-                long minutes = d.toMinutesPart();
+                long minutes = d.toMinutes() % 60;
                 elapsed = String.format("Ready for %dh %02dm", hours, minutes);
             }
+            String cName = (o.getCustomer() != null && o.getCustomer().getName() != null)
+                    ? o.getCustomer().getName() : "Unknown";
             System.out.printf("%-9s | %-16s | %-10d | %-12s | %-18s\n",
-                    o.getOrderId(), o.getCustomer().getName(), o.getLoads(), o.getLaundryStatus(), elapsed);
+                    o.getOrderId(), cName, o.getLoads(), o.getLaundryStatus(), elapsed);
         }
         System.out.println("--------------------------------------------------");
     }
@@ -1170,15 +1228,18 @@ public class LaundrySystem {
 
         System.out.printf("%-9s | %-16s | %-20s | %-10s | %-10s\n",
                 "Order ID", "Customer", "Dorm & Room", "Loads", "Amount Due");
-        System.out.println("-".repeat(75));
+        System.out.println(repeat("-", 75));
 
         for (Order o : this.orders) {
             if (o.getPaymentStatus() == PaymentStatus.UNPAID) {
                 unpaidCount++;
                 totalUnpaid += o.getTotalAmount();
+                String cName = (o.getCustomer() != null && o.getCustomer().getName() != null)
+                        ? o.getCustomer().getName() : "Unknown";
+                String dorm = (o.getCustomer() != null && o.getCustomer().getDorm() != null) ? o.getCustomer().getDorm() : "Unknown";
+                String room = (o.getCustomer() != null && o.getCustomer().getRoomNumber() != null) ? o.getCustomer().getRoomNumber() : "-";
                 System.out.printf("%-9s | %-16s | %-20s | %-10d | Php %8.2f\n",
-                        o.getOrderId(), o.getCustomer().getName(),
-                        o.getCustomer().getDorm() + " R" + o.getCustomer().getRoomNumber(),
+                        o.getOrderId(), cName, dorm + " R" + room,
                         o.getLoads(), o.getTotalAmount());
             }
         }
@@ -1186,7 +1247,7 @@ public class LaundrySystem {
         if (unpaidCount == 0) {
             System.out.println("All orders are paid! No outstanding balances.");
         } else {
-            System.out.println("-".repeat(75));
+            System.out.println(repeat("-", 75));
             System.out.printf("Total Unpaid Orders: %d | Total Outstanding Balance: Php %.2f\n",
                     unpaidCount, totalUnpaid);
         }
@@ -1220,7 +1281,7 @@ public class LaundrySystem {
         System.out.printf("Total Paid Orders:       %d\n", paidCount);
         System.out.printf("Total Cash Payments:     Php %10.2f\n", cashTotal);
         System.out.printf("Total Online Payments:   Php %10.2f\n", onlineTotal);
-        System.out.println("-".repeat(45));
+        System.out.println(repeat("-", 45));
         System.out.printf("GRAND TOTAL SALES:       Php %10.2f\n", grandTotal);
         System.out.println("--------------------------------------------------");
     }
@@ -1247,11 +1308,22 @@ public class LaundrySystem {
             for (Stop s : run) {
                 runLoads += s.getTotalLoads();
                 runOrders += s.getOrders().size();
-                System.out.printf("  Stop %d: %s (Total Loads: %d)\n", stopNum++, s.getDorm(), s.getTotalLoads());
+                LocalTime earliest = s.getEarliestDeadline();
+                String dlInfo = (earliest != null)
+                        ? " [Earliest Deadline: " + earliest.format(DateTimeFormatter.ofPattern("HH:mm")) + "]"
+                        : "";
+                System.out.printf("  Stop %d: %s (Total Loads: %d)%s\n", stopNum++, s.getDorm(), s.getTotalLoads(), dlInfo);
                 for (Order o : s.getOrders()) {
-                    System.out.printf("    - [%s] %s (Room %s) | %.1f kg | Php %.2f | %s\n",
-                            o.getOrderId(), o.getCustomer().getName(), o.getCustomer().getRoomNumber(),
-                            o.getWeightKg(), o.getTotalAmount(), o.getPaymentStatus());
+                    String oDl = (o.getDeliveryDeadline() != null)
+                            ? " | Deadline: " + o.getDeliveryDeadline().format(DateTimeFormatter.ofPattern("HH:mm"))
+                            : "";
+                    String cName = (o.getCustomer() != null && o.getCustomer().getName() != null)
+                            ? o.getCustomer().getName() : "Unknown";
+                    String room = (o.getCustomer() != null && o.getCustomer().getRoomNumber() != null)
+                            ? o.getCustomer().getRoomNumber() : "-";
+                    System.out.printf("    - [%s] %s (Room %s) | %.1f kg | Php %.2f | %s%s\n",
+                            o.getOrderId(), cName, room,
+                            o.getWeightKg(), o.getTotalAmount(), o.getPaymentStatus(), oDl);
                 }
             }
             System.out.printf("  Run Totals: %d order(s) | %d load(s)\n\n", runOrders, runLoads);
@@ -1273,7 +1345,7 @@ public class LaundrySystem {
 
         System.out.printf("%-9s | %-16s | %-18s | %-10s | %-18s\n",
                 "Order ID", "Customer", "Dormitory", "Ready Time", "Waiting Duration");
-        System.out.println("-".repeat(80));
+        System.out.println(repeat("-", 80));
 
         DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
         for (Order o : this.orders) {
@@ -1282,11 +1354,14 @@ public class LaundrySystem {
                 long hours = duration.toHours();
                 if (hours >= LATE_HOURS) {
                     lateCount++;
-                    long minutes = duration.toMinutesPart();
+                    long minutes = duration.toMinutes() % 60;
                     String durStr = String.format("%dh %02dm (LATE)", hours, minutes);
+                    String cName = (o.getCustomer() != null && o.getCustomer().getName() != null)
+                            ? o.getCustomer().getName() : "Unknown";
+                    String dorm = (o.getCustomer() != null && o.getCustomer().getDorm() != null)
+                            ? o.getCustomer().getDorm() : "Unknown";
                     System.out.printf("%-9s | %-16s | %-18s | %-10s | %-18s\n",
-                            o.getOrderId(), o.getCustomer().getName(),
-                            o.getCustomer().getDorm(),
+                            o.getOrderId(), cName, dorm,
                             o.getTimeReady().format(timeFmt), durStr);
                 }
             }
@@ -1295,7 +1370,7 @@ public class LaundrySystem {
         if (lateCount == 0) {
             System.out.println("No late orders! All ready laundry orders are within the 3-hour window.");
         } else {
-            System.out.println("-".repeat(80));
+            System.out.println(repeat("-", 80));
             System.out.printf("Total Flagged Late Orders: %d (exceeded %d-hour SLA threshold)\n",
                     lateCount, LATE_HOURS);
         }

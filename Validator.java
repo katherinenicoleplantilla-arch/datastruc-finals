@@ -98,28 +98,40 @@ public class Validator {
         return room != null && !room.trim().isEmpty();
     }
 
+    public static final double MAX_WEIGHT = 1000.0; // Maximum allowed laundry weight in kg
+
     /**
-     * Validates that a laundry weight is strictly greater than 0.
+     * Validates that a laundry weight is strictly greater than 0, is finite,
+     * and does not exceed the upper bound (MAX_WEIGHT).
      *
      * @param weight weight in kilograms
-     * @return true if weight > 0, false otherwise
+     * @return true if weight > 0, finite, and <= MAX_WEIGHT; false otherwise
      */
     public static boolean isValidWeight(double weight) {
-        return weight > 0.0;
+        return Double.isFinite(weight) && weight > 0.0 && weight <= MAX_WEIGHT;
     }
 
     /**
-     * Validates a string representation of weight, catching NumberFormatException.
+     * Validates a string representation of weight against a strict plain-number format
+     * and ensures the parsed value is finite, positive, and within the upper bound.
+     *
+     * Rejects nonsense inputs like "Infinity", "NaN", exponents ("1e300"),
+     * suffixes ("5d"), and hex floats ("0x1p4").
      *
      * @param weightStr raw string input for weight
-     * @return true if numeric and > 0, false otherwise
+     * @return true if valid plain number > 0 and <= MAX_WEIGHT, false otherwise
      */
     public static boolean isValidWeight(String weightStr) {
-        if (weightStr == null || weightStr.trim().isEmpty()) {
+        if (weightStr == null) {
+            return false;
+        }
+        String trimmed = weightStr.trim();
+        // Plain positive integer or decimal format only (e.g., "5", "5.5", "0.5")
+        if (!trimmed.matches("^\\d+(\\.\\d+)?$")) {
             return false;
         }
         try {
-            double w = Double.parseDouble(weightStr.trim());
+            double w = Double.parseDouble(trimmed);
             return isValidWeight(w);
         } catch (NumberFormatException e) {
             return false;

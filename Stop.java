@@ -1,3 +1,4 @@
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +33,23 @@ public class Stop {
             this.orders.add(order);
             this.totalLoads += order.getLoads();
         }
+    }
+
+    /**
+     * Returns the earliest delivery deadline among all orders in this stop.
+     *
+     * @return earliest LocalTime deadline, or null if none of the orders have a deadline
+     */
+    public LocalTime getEarliestDeadline() {
+        LocalTime earliest = null;
+        for (Order o : orders) {
+            if (o != null && o.getDeliveryDeadline() != null) {
+                if (earliest == null || o.getDeliveryDeadline().isBefore(earliest)) {
+                    earliest = o.getDeliveryDeadline();
+                }
+            }
+        }
+        return earliest;
     }
 
     /**

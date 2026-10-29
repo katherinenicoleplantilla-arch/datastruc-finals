@@ -2,6 +2,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class implementing a custom recursive Merge Sort algorithm for Order objects.
@@ -91,6 +92,48 @@ public class SortUtil {
     public static Comparator<Order> byTimeReceived() { return BY_TIME_RECEIVED; }
     public static Comparator<Order> byDeliveryDeadline() { return BY_DELIVERY_DEADLINE; }
     public static Comparator<Order> byDorm() { return BY_DORM; }
+
+    /**
+     * Creates a comparator for sorting delivery orders by their dormitory's earliest deadline
+     * (earliest first, nulls last), tie-breaking by dormitory name alphabetically, and then
+     * by individual order delivery deadline.
+     *
+     * Ensures urgent orders are scheduled first and that orders for the same dorm remain grouped.
+     *
+     * @param dormDeadlines map of lowercase dorm names to their earliest delivery deadline
+     * @return priority comparator for delivery routing
+     */
+    public static Comparator<Order> byDeliveryPriority(Map<String, LocalTime> dormDeadlines) {
+        return (o1, o2) -> {
+            String dorm1 = (o1 != null && o1.getCustomer() != null && o1.getCustomer().getDorm() != null)
+                    ? o1.getCustomer().getDorm() : "";
+            String dorm2 = (o2 != null && o2.getCustomer() != null && o2.getCustomer().getDorm() != null)
+                    ? o2.getCustomer().getDorm() : "";
+
+            LocalTime t1 = (dormDeadlines != null) ? dormDeadlines.get(dorm1.toLowerCase()) : null;
+            LocalTime t2 = (dormDeadlines != null) ? dormDeadlines.get(dorm2.toLowerCase()) : null;
+
+            if (t1 != null || t2 != null) {
+                if (t1 == null) return 1;
+                if (t2 == null) return -1;
+                int cmp = t1.compareTo(t2);
+                if (cmp != 0) return cmp;
+            }
+
+            int dormCmp = dorm1.compareToIgnoreCase(dorm2);
+            if (dormCmp != 0) return dormCmp;
+
+            LocalTime ot1 = (o1 != null) ? o1.getDeliveryDeadline() : null;
+            LocalTime ot2 = (o2 != null) ? o2.getDeliveryDeadline() : null;
+            if (ot1 != null || ot2 != null) {
+                if (ot1 == null) return 1;
+                if (ot2 == null) return -1;
+                return ot1.compareTo(ot2);
+            }
+
+            return 0;
+        };
+    }
 
     /**
      * Recursively sorts a list of Order objects using Merge Sort with the given Comparator.

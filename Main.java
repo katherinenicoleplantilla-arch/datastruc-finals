@@ -28,9 +28,12 @@ public class Main {
         System.out.println("=======================================================================");
 
         boolean running = true;
-        while (running) {
+        while (running && scanner.hasNextLine()) {
             displayMenu();
             System.out.print("Enter your choice (1-15): ");
+            if (!scanner.hasNextLine()) {
+                break;
+            }
             String input = scanner.nextLine().trim();
 
             int choice = -1;
@@ -41,58 +44,63 @@ public class Main {
                 continue;
             }
 
-            switch (choice) {
-                case 1:
-                    system.addCustomer();
-                    break;
-                case 2:
-                    system.createOrder();
-                    break;
-                case 3:
-                    system.processNextOrder();
-                    break;
-                case 4:
-                    system.markOrderReady();
-                    break;
-                case 5:
-                    system.recordPayment();
-                    break;
-                case 6:
-                    system.managePickupRequests();
-                    break;
-                case 7:
-                    system.dispatchTrike();
-                    break;
-                case 8:
-                    system.deliverNextStop();
-                    break;
-                case 9:
-                    system.claimOrder();
-                    break;
-                case 10:
-                    system.searchMenu();
-                    break;
-                case 11:
-                    system.viewOrders();
-                    break;
-                case 12:
-                    system.showReports();
-                    break;
-                case 13:
-                    system.undoLastAction();
-                    break;
-                case 14:
-                    system.loadSampleData();
-                    break;
-                case 15:
-                    running = false;
-                    System.out.println("\n=======================================================================");
-                    System.out.println("    Thank you for using QMAR Laundry Order Management System. Goodbye! ");
-                    System.out.println("=======================================================================");
-                    break;
-                default:
-                    System.out.println("\n>> Invalid choice! Option must be between 1 and 15.\n");
-                    break;
+            try {
+                switch (choice) {
+                    case 1:
+                        system.addCustomer();
+                        break;
+                    case 2:
+                        system.createOrder();
+                        break;
+                    case 3:
+                        system.processNextOrder();
+                        break;
+                    case 4:
+                        system.markOrderReady();
+                        break;
+                    case 5:
+                        system.recordPayment();
+                        break;
+                    case 6:
+                        system.managePickupRequests();
+                        break;
+                    case 7:
+                        system.dispatchTrike();
+                        break;
+                    case 8:
+                        system.deliverNextStop();
+                        break;
+                    case 9:
+                        system.claimOrder();
+                        break;
+                    case 10:
+                        system.searchMenu();
+                        break;
+                    case 11:
+                        system.viewOrders();
+                        break;
+                    case 12:
+                        system.showReports();
+                        break;
+                    case 13:
+                        system.undoLastAction();
+                        break;
+                    case 14:
+                        system.loadSampleData();
+                        break;
+                    case 15:
+                        running = false;
+                        System.out.println("\n=======================================================================");
+                        System.out.println("    Thank you for using QMAR Laundry Order Management System. Goodbye! ");
+                        System.out.println("=======================================================================");
+                        break;
+                    default:
+                        System.out.println("\n>> Invalid choice! Option must be between 1 and 15.\n");
+                        break;
+                }
+            } catch (java.util.NoSuchElementException e) {
+                System.out.println("\n>> Input stream ended. Exiting application.");
+                running = false;
             }
         }
 

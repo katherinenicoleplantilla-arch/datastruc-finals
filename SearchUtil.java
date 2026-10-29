@@ -34,10 +34,22 @@ public class SearchUtil {
             return null;
         }
 
+        // Allow flexible queries like "1" or "c1" to match "C001"
+        String normalizedCid = null;
+        if (trimmed.matches("^\\d{1,3}$")) {
+            try {
+                normalizedCid = String.format("C%03d", Integer.parseInt(trimmed));
+            } catch (NumberFormatException ignored) {}
+        } else if (trimmed.matches("^(?i)c\\d{1,3}$")) {
+            try {
+                normalizedCid = String.format("C%03d", Integer.parseInt(trimmed.substring(1)));
+            } catch (NumberFormatException ignored) {}
+        }
+
         // Iterate through the customers list one by one
         for (Customer c : customers) {
             if (c != null) {
-                if ((c.getCustomerId() != null && c.getCustomerId().equalsIgnoreCase(trimmed)) ||
+                if ((c.getCustomerId() != null && (c.getCustomerId().equalsIgnoreCase(trimmed) || (normalizedCid != null && c.getCustomerId().equalsIgnoreCase(normalizedCid)))) ||
                     (c.getName() != null && c.getName().equalsIgnoreCase(trimmed)) ||
                     (c.getContactNumber() != null && c.getContactNumber().equalsIgnoreCase(trimmed))) {
                     return c; // Immediate match found
@@ -68,12 +80,27 @@ public class SearchUtil {
             return null;
         }
 
+        // Allow flexible queries like "1", "0001", or "ldy1" to match "LDY0001"
+        if (targetId.matches("^\\d{1,4}$")) {
+            try {
+                targetId = String.format("LDY%04d", Integer.parseInt(targetId));
+            } catch (NumberFormatException ignored) {}
+        } else if (targetId.matches("^(?i)ldy\\d{1,4}$")) {
+            try {
+                targetId = String.format("LDY%04d", Integer.parseInt(targetId.substring(3)));
+            } catch (NumberFormatException ignored) {}
+        }
+
         int low = 0;
         int high = orders.size() - 1;
 
         while (low <= high) {
             int mid = low + (high - low) / 2;
             Order midOrder = orders.get(mid);
+            if (midOrder == null || midOrder.getOrderId() == null) {
+                low = mid + 1;
+                continue;
+            }
             int cmp = midOrder.getOrderId().compareToIgnoreCase(targetId);
 
             if (cmp == 0) {

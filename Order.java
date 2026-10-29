@@ -32,6 +32,9 @@ public class Order {
                  ReceiveMethod receiveMethod, ReturnMethod returnMethod,
                  LocalTime deliveryDeadline, PaymentStatus paymentStatus,
                  PaymentMethod paymentMethod) {
+        if (!Validator.isValidWeight(weightKg)) {
+            throw new IllegalArgumentException("Invalid weight: " + weightKg);
+        }
         this.orderId = orderId;
         this.customer = customer;
         this.weightKg = weightKg;
@@ -55,6 +58,9 @@ public class Order {
                  LocalTime deliveryDeadline, LaundryStatus laundryStatus,
                  PaymentStatus paymentStatus, PaymentMethod paymentMethod,
                  LocalDateTime timeReceived, LocalDateTime timeReady) {
+        if (!Validator.isValidWeight(weightKg)) {
+            throw new IllegalArgumentException("Invalid weight: " + weightKg);
+        }
         this.orderId = orderId;
         this.customer = customer;
         this.weightKg = weightKg;
@@ -111,6 +117,9 @@ public class Order {
     }
 
     public void setWeightKg(double weightKg) {
+        if (!Validator.isValidWeight(weightKg)) {
+            throw new IllegalArgumentException("Invalid weight: " + weightKg);
+        }
         this.weightKg = weightKg;
         this.loads = computeLoads();
         this.totalAmount = computeTotal();
