@@ -642,6 +642,7 @@ public class LaundrySystem {
 
             Stop currentStop = new Stop(currentDorm);
 
+            boolean capacityReached = false;
             // Nested loop: consume all orders belonging to the current dorm
             while (i < sortedOrders.size()) {
                 Order order = sortedOrders.get(i);
@@ -663,6 +664,7 @@ public class LaundrySystem {
                     System.out.printf(
                         ">> Trike capacity limit reached (%d/%d loads). Remaining orders deferred to next run.%n",
                         loadCount, TRIKE_CAPACITY);
+                    capacityReached = true;
                     break;
                 }
                 currentStop.addOrder(order);
@@ -674,8 +676,8 @@ public class LaundrySystem {
                 stops.add(currentStop);
             }
 
-            // If the trike is now full, stop building stops for this run
-            if (loadCount >= TRIKE_CAPACITY) {
+            // If capacity limit stopped grouping or trike is full, stop building stops for this run
+            if (capacityReached || loadCount >= TRIKE_CAPACITY) {
                 break;
             }
         }
@@ -719,11 +721,11 @@ public class LaundrySystem {
             return;
         }
 
-        // 2. Merge sort orders by dorm name
-        List<Order> sortedByDorm = SortUtil.mergeSort(readyDeliveryOrders, SortUtil.BY_DORM);
+        // 2. Merge sort orders grouped by dorm and prioritized by earliest delivery deadline (resolves issue #4)
+        List<Order> sortedOrders = SortUtil.mergeSort(readyDeliveryOrders, SortUtil.byDormDeadline(readyDeliveryOrders));
 
         // 3. Build dorm-grouped stops enforcing the 10-load limit
-        List<Stop> stops = buildStops(sortedByDorm);
+        List<Stop> stops = buildStops(sortedOrders);
         if (stops.isEmpty()) {
             System.out.println("No stops could be formed within capacity limit.");
             return;
@@ -764,15 +766,22 @@ public class LaundrySystem {
         System.out.printf("Tricycle Dispatched Successfully! (Run #%d)\n", deliveryLog.size());
         System.out.printf("Total Stops: %d | Total Orders: %d | Total Loads: %d / %d loads\n",
                 tempStops.size(), totalRunOrders, totalRunLoads, TRIKE_CAPACITY);
-        System.out.println("Delivery Route Order (LIFO physical trike unloading):");
+        System.out.println("Delivery Route Order (Prioritized by Earliest Deadline):");
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
         int stopNum = 1;
         for (Stop s : tempStops) {
-            System.out.printf("  Stop %d: %s (%d load(s), %d order(s))\n",
-                    stopNum++, s.getDorm(), s.getTotalLoads(), s.getOrders().size());
+            String targetTime = (s.getEarliestDeadline() != null)
+                    ? s.getEarliestDeadline().format(timeFmt)
+                    : "No deadline";
+            System.out.printf("  Stop %d: %s [Target Deadline: %s] (%d load(s), %d order(s))\n",
+                    stopNum++, s.getDorm(), targetTime, s.getTotalLoads(), s.getOrders().size());
             for (Order o : s.getOrders()) {
-                System.out.printf("    - [%s] %s | Room %s | Php %.2f | %s\n",
+                String oDeadline = (o.getDeliveryDeadline() != null)
+                        ? o.getDeliveryDeadline().format(timeFmt)
+                        : "None";
+                System.out.printf("    - [%s] %s | Room %s | Deadline: %s | Php %.2f | %s\n",
                         o.getOrderId(), o.getCustomer().getName(), o.getCustomer().getRoomNumber(),
-                        o.getTotalAmount(), o.getPaymentStatus());
+                        oDeadline, o.getTotalAmount(), o.getPaymentStatus());
             }
         }
         System.out.println("--------------------------------------------------");
@@ -800,7 +809,11 @@ public class LaundrySystem {
         // Pop top stop from LIFO trikeStack
         Stop stop = trikeStack.pop();
 
-        System.out.printf("Arrived at Stop: %s\n", stop.getDorm());
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+        String targetTime = (stop.getEarliestDeadline() != null)
+                ? stop.getEarliestDeadline().format(timeFmt)
+                : "No deadline";
+        System.out.printf("Arrived at Stop: %s (Target Deadline: %s)\n", stop.getDorm(), targetTime);
         System.out.printf("Orders to deliver: %d | Loads: %d\n", stop.getOrders().size(), stop.getTotalLoads());
         System.out.println("--------------------------------------------------");
 

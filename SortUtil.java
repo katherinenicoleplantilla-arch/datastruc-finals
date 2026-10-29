@@ -1,7 +1,9 @@
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class implementing a custom recursive Merge Sort algorithm for Order objects.
@@ -84,6 +86,73 @@ public class SortUtil {
                 ? o2.getCustomer().getDorm() : "";
         return d1.compareToIgnoreCase(d2);
     };
+
+    /**
+     * Creates a Comparator that groups orders by Dormitory while prioritizing dormitories
+     * with earlier delivery deadlines.
+     *
+     * Routing and Batching Criteria (resolves issue #4):
+     * 1. Groups all orders belonging to the same dormitory together so stops remain unified.
+     * 2. Dormitories whose earliest order has an earlier deadline are placed first.
+     * 3. Dormitories with deadlines come before dormitories without any deadlines (nulls last).
+     * 4. Ties between dormitories with the same deadline (or no deadlines) are broken alphabetically.
+     * 5. Inside the same dormitory, individual orders are sorted by delivery deadline ascending.
+     *
+     * @param orders the list of delivery orders to extract dormitory deadlines from
+     * @return Comparator for deadline-driven delivery routing
+     */
+    public static Comparator<Order> byDormDeadline(List<Order> orders) {
+        Map<String, LocalTime> dormDeadlines = new HashMap<>();
+        if (orders != null) {
+            for (Order o : orders) {
+                if (o != null && o.getCustomer() != null && o.getCustomer().getDorm() != null) {
+                    String dormKey = o.getCustomer().getDorm().trim().toLowerCase();
+                    LocalTime d = o.getDeliveryDeadline();
+                    if (d != null) {
+                        LocalTime current = dormDeadlines.get(dormKey);
+                        if (current == null || d.isBefore(current)) {
+                            dormDeadlines.put(dormKey, d);
+                        }
+                    } else if (!dormDeadlines.containsKey(dormKey)) {
+                        dormDeadlines.put(dormKey, null);
+                    }
+                }
+            }
+        }
+
+        return (o1, o2) -> {
+            String d1 = (o1 != null && o1.getCustomer() != null && o1.getCustomer().getDorm() != null)
+                    ? o1.getCustomer().getDorm().trim() : "";
+            String d2 = (o2 != null && o2.getCustomer() != null && o2.getCustomer().getDorm() != null)
+                    ? o2.getCustomer().getDorm().trim() : "";
+
+            // Same dormitory: keep orders grouped, sort by individual order deadline
+            if (d1.equalsIgnoreCase(d2)) {
+                LocalTime t1 = (o1 != null) ? o1.getDeliveryDeadline() : null;
+                LocalTime t2 = (o2 != null) ? o2.getDeliveryDeadline() : null;
+                if (t1 == null && t2 == null) return 0;
+                if (t1 == null) return 1;
+                if (t2 == null) return -1;
+                return t1.compareTo(t2);
+            }
+
+            // Different dormitories: compare the dormitory's earliest deadline
+            LocalTime dead1 = dormDeadlines.get(d1.toLowerCase());
+            LocalTime dead2 = dormDeadlines.get(d2.toLowerCase());
+
+            if (dead1 == null && dead2 == null) {
+                return d1.compareToIgnoreCase(d2);
+            }
+            if (dead1 == null) return 1;
+            if (dead2 == null) return -1;
+
+            int cmp = dead1.compareTo(dead2);
+            if (cmp != 0) {
+                return cmp;
+            }
+            return d1.compareToIgnoreCase(d2);
+        };
+    }
 
     // Helper accessor methods matching comparator names
     public static Comparator<Order> byTotalAmount() { return BY_TOTAL_AMOUNT; }
