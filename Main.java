@@ -133,7 +133,7 @@ public class Main {
         System.out.println(" 11 View Orders");
         System.out.println(" 12 Reports\n");
         System.out.println("SYSTEM");
-        System.out.println(" 13 Undo Last Action");
+        System.out.println(" 13 Undo Last Action (Undo payment or Undo Mark Order Ready)");
         System.out.println(" 14 Load Sample Data");
         System.out.println(" 15 Exit");
     }
