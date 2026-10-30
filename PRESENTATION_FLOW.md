@@ -1,258 +1,353 @@
 # PRESENTATION FLOW: QMAR LAUNDRY ORDER MANAGEMENT SYSTEM
-**Course:** Final Project – Data Structures and Algorithms (Datastrc)  
-**Institution:** De La Salle Lipa – College of Information Technology & Engineering, Computer Science Department  
+**Course:** Data Structures and Algorithms (Datastrc) — Final Project Presentation  
+**Institution:** De La Salle Lipa (DLSL) — College of Information Technology & Engineering, Computer Science Department  
 **Client:** QMAR Laundry Shop (Villa Lourdes, Brgy. Mataas na Lupa, Lipa City)  
-**Target Duration:** 10–12 Minutes (+ 3–5 Minutes Panel Q&A)  
-**Target Grade:** 50/50 Points (Outstanding Rating per Course Rubric)
+**Format:** 4 Speakers | 10–12 Minutes Total Presentation (+ 3–5 Minutes Panel Defense)  
+**Target Grade:** 50/50 Points (Exemplary Rating across all Rubric Categories)
 
 ---
 
-## 👥 Speaker Allocation & Role Matrix (Flexible for 2 to 5 Members)
+## 👥 4-Speaker Team Allocation & Roles
 
-| Section / Topic | 5-Member Team | 4-Member Team | 3-Member Team | 2-Member Team | Time |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Intro & Business Problem** | Speaker 1 | Speaker 1 | Speaker 1 | Speaker 1 | 1.5 mins |
-| **2. Architecture & OOP Design** | Speaker 2 | Speaker 2 | Speaker 1 | Speaker 1 | 2.0 mins |
-| **3. DSA Justification & Math** | Speaker 3 | Speaker 3 | Speaker 2 | Speaker 2 | 2.5 mins |
-| **4. Live System Demonstration** | Speaker 4 | Speaker 4 | Speaker 3 | Speaker 2 | 3.5 mins |
-| **5. Edge Cases & Robustness** | Speaker 5 | Speaker 3 | Speaker 2 | Speaker 1 | 1.5 mins |
-| **6. Summary & Panel Defense** | All Members | All Members | All Members | All Members | Q&A |
+| Speaker | Assigned Role | Core Topics Covered | Presentation Window | Target Time |
+| :--- | :--- | :--- | :--- | :--- |
+| **Speaker 1** | **The Client Storyteller & Business Architect** | Real-world dorm context, QMAR shop bottlenecks, client interviews, High-level MVC architecture, OOP principles | Slide 1 – Slide 3 | ~2.5 mins (0:00 – 2:30) |
+| **Speaker 2** | **The Data Structure Architect** | FIFO Queues (`washingQueue`, `pickupQueue`), LIFO Stacks (`trikeStack` physical vehicle packing, `undoStack` transactional rollback) | Slide 4 – Slide 5 | ~2.5 mins (2:30 – 5:00) |
+| **Speaker 3** | **The Algorithm & Live Demo Lead** | Searching ($O(n)$ Linear vs $O(\log n)$ Binary), Recursive Merge Sort ($O(n \log n)$ stable deadline routing), Full Live Console Demo | Slide 6 – Slide 7 | ~3.5 mins (5:00 – 8:30) |
+| **Speaker 4** | **The Quality Assurance & Resilience Lead** | Edge-case engineering (the 4 GitHub issues battle: EOF streams, Infinity weights, name collisions, delivery limits), Wrap-up, Q&A kickoff | Slide 8 – Slide 9 | ~2.5 mins (8:30 – 11:00) |
+| **All 4** | **The Unified Engineering Team** | Technical Panel Q&A Defense (Pre-assigned specialized domains) | Defense / Q&A | ~3–5 mins (11:00 – 15:00) |
 
 ---
 
-## ⏱️ Detailed Slide-by-Slide & Speaking Script Flow
+## 🎭 Stage Presence & Delivery Guidelines ("The Human Touch")
+
+1. **Be Conversational, Not Robotic:**  
+   Don't read verbatim off the slides or notes. Speak to the panel as colleagues and engineering mentors. Use hand gestures, smile, and make direct eye contact with Professor Balita and the panel.
+2. **Tell the Student Story:**  
+   Ground every technical decision in the lived reality of Villa Lourdes dormers and laundry shop staff. Relatable anecdotes keep the panel engaged.
+3. **Seamless Verbal Handoffs:**  
+   Never let dead silence fall between speakers. Use warm, natural transitions (e.g., *"To break down how we mapped these physical baskets into textbook queues and stacks, here is [Speaker 2]!"*).
+4. **Physical Team Chemistry:**  
+   While one member speaks, other members should stay actively engaged—nodding, smiling, or assisting with live console typing. It shows cohesive teamwork.
+
+---
+
+## 🎬 Detailed Slide-by-Slide Speaking Script & Flow
 
 ```
 ========================================================================================
-PART 1: INTRODUCTION & BUSINESS PROBLEM CONTEXT
-Speaker: Member 1 | Time: 0:00 - 1:30
+PART 1: THE HOOK, CLIENT CONTEXT & ARCHITECTURE
+Speaker: Speaker 1 (The Client Storyteller & Business Architect)
+Time: 0:00 – 2:30 (2.5 Minutes)
 ========================================================================================
 ```
 
-### Slide 1: Title & Team Introduction
-* **Visuals:** Project Title, DLSL CITE Logo, QMAR Laundry Shop Logo, Group Member Names & Roles.
-* **Speaker Script:**
-  > "Good day, esteemed panel members, Faculty Professor Balita, and fellow peers. Today, our team is proud to present our final project for Data Structures and Algorithms: the **Laundry Order Management System for QMAR Laundry Shop** in Lipa City. 
-  > Our objective is not just to build a console tool, but to bridge academic theoretical algorithms with an operational real-world business solution."
-
-### Slide 2: The Client & The Real-World Operational Challenge
-* **Visuals:** Photos/map of Villa Lourdes, Lipa City; Comparison of Paper Logbook vs. Automated System.
-* **Key Rubric Points Addressed:** *Thoroughly details client's operational problem (15 pts).*
-* **Speaker Script:**
-  > "QMAR Laundry Shop is located right beside major student dormitories near De La Salle Lipa—such as Villa Lourdes Dorm, Green Residences, and St. Joseph Hall. They handle wash-and-fold, dry cleaning, pickup, and trike deliveries.
-  > However, the shop has operated entirely on **paper logbooks and physical whiteboard notes**. On high-volume days like Sundays:
-  > 1. **Mixed-up laundry and misplaced bags** occur because intake and washing queues are untracked.
-  > 2. **Unclaimed laundry piles up** on the shop floor without payment tracking.
-  > 3. **Delivery routing is chaotic**—trike drivers deliver without route planning, causing urgent student deadlines to be missed.
-  > 4. **Mistaken entries cannot be audited**, leading to cash discrepancies.
+### Slide 1: Welcome & Project Introduction
+* **On Screen:** Clean slide with DLSL CITE logo, QMAR Laundry Shop logo, System Title: *"QMAR Laundry Shop Order Management System: Bridging Data Structures to Real-World Operations"*, and the names of all 4 group members.
+* **Stage Direction:** *[Stand centered, smile warmly, look at Professor Balita and the panel, speak with confident, conversational energy.]*
+* **Speaker 1 Script:**
+  > "Good day, Professor Balita, esteemed panel members, and fellow computer science students!
   > 
-  > To solve this, we engineered a pure JDK Java application that uses core Data Structures and Algorithms to automate, organize, and safeguard every single operational workflow."
-
-*(Verbal Handoff: "I now pass the floor to [Speaker 2] to discuss our system architecture and design.")*
-
----
-
-```
-========================================================================================
-PART 2: SYSTEM ARCHITECTURE & OBJECT-ORIENTED DESIGN
-Speaker: Member 2 | Time: 1:30 - 3:30
-========================================================================================
-```
-
-### Slide 3: High-Level System Architecture & Layered Design
-* **Visuals:** System Architecture Diagram (Console UI -> Controller -> Utilities & Data Structures Store -> Domain Models).
-* **Key Rubric Points Addressed:** *Complete program architecture/design and OOP principles (15 pts).*
-* **Speaker Script:**
-  > "Our system adheres strictly to the **Model-View-Controller (MVC) and Separation of Concerns principles**:
-  > - **The View/Driver (`Main.java`):** Contains zero business logic. It handles the interactive user loop, parses inputs, catches numeric exceptions, and cleanly handles end-of-stream EOF signals.
-  > - **The Controller (`LaundrySystem.java`):** Central brain coordinating all 15 operational menu actions, queues, stacks, lists, and business transactions.
-  > - **Domain Models (`Customer`, `Order`, `Stop`, `UndoAction`):** Pure state capsules representing physical shop entities.
-  > - **Utility Classes (`Validator`, `SearchUtil`, `SortUtil`):** Stateless algorithmic engines carrying zero persistent state, handling regex parsing, linear/binary search, and merge sort."
-
-### Slide 4: UML Class Diagram & OOP Principles
-* **Visuals:** UML Class Diagram (Figure 1 in Documentation), highlighting Encapsulation, Polymorphism, and Aggregation.
-* **Speaker Script:**
-  > "Our design demonstrates core Object-Oriented Programming:
-  > - **Encapsulation:** Model fields are private. For instance, in `Order.java`, `loads` and `totalAmount` are computed strictly inside the class via `computeLoads()` and `computeTotal()`. External classes cannot maliciously alter financial figures.
-  > - **Polymorphism via Interfaces:** We declare all structures by their Java Collections interfaces—`Queue<Order>`, `Deque<Stop>`, and `List<Customer>`—instantiating them as `LinkedList`, `ArrayDeque`, and `ArrayList`.
-  > - **Aggregation & Association:** An `Order` associates with exactly one `Customer`. A delivery `Stop` aggregates multiple `Order`s for a single dorm. An `UndoAction` holds an `Order` reference and a status snapshot for transactional rollbacks."
-
-*(Verbal Handoff: "Next, [Speaker 3] will explain our mathematical justification and implementation of Data Structures and Algorithms.")*
-
----
-
-```
-========================================================================================
-PART 3: CONCEPTS OF DATA STRUCTURES & ALGORITHMS (DSA JUSTIFICATION)
-Speaker: Member 3 | Time: 3:30 - 6:00
-========================================================================================
-```
-
-### Slide 5: Queue Implementations (FIFO - First-In, First-Out)
-* **Visuals:** Queue diagram showing `washingQueue`, `pickupQueue`, and `stopQueue`.
-* **DSA Focus:** `Queue<T>` implemented as `LinkedList<T>`.
-* **Speaker Script:**
-  > "Why did we implement Queues?
-  > In a student laundry service, fairness is critical: nobody's laundry should be skipped.
-  > - **`washingQueue` (FIFO `LinkedList<Order>`):** When orders are created, they enqueue at the tail ($O(1)$ `add`). When the washer is free, staff choose option 3 to dequeue the front order ($O(1)$ `poll`). Arrival order strictly equals washing order.
-  > - **`pickupQueue` (FIFO `LinkedList<Customer>`):** Tracks student requests for laundry pickup from dorms.
-  > - **`stopQueue` (FIFO `LinkedList<Stop>`):** Holds aggregated dormitory stops for trike dispatch before stack loading."
-
-### Slide 6: Stack Implementations (LIFO - Last-In, First-Out)
-* **Visuals:** Diagram showing physical trike loading LIFO and the Undo History Stack.
-* **DSA Focus:** `Deque<T>` implemented as `ArrayDeque<T>`.
-* **Speaker Script:**
-  > "We utilize Stacks in two distinct, real-world areas:
-  > 1. **`trikeStack` (Physical Trike Delivery Stack):** 
-  >    A delivery tricycle is packed physically from front to back. The stops scheduled for the first dorm must be loaded *last* so they sit right at the tricycle tailgate for immediate unloading. By pushing stops onto `trikeStack` in reverse sequence, popping the top of the stack ($O(1)$ `pop`) delivers Stop 1, then Stop 2, matching real-world physical mechanics.
-  > 2. **`undoStack` (Operational Undo History):** 
-  >    Mistakes happen at the front counter. When staff record a payment or mark an order ready, an `UndoAction` snapshot is pushed ($O(1)$). Popping the stack reverses the most recent action first, ensuring transactional state safety."
-
-### Slide 7: Searching & Sorting Algorithms (Linear, Binary, & Merge Sort)
-* **Visuals:** Complexity Comparison Table + Divide-and-Conquer Merge Sort visualization.
-* **DSA Focus:** Hand-written iterative Linear/Binary Search and recursive Merge Sort.
-* **Speaker Script:**
-  > "To satisfy project requirements without reliance on black-box utilities like `Collections.sort`:
-  > - **Linear Search ($O(n)$):** In `SearchUtil.linearSearchCustomer()`, we search unsorted customer lists by partial name, ID, or phone number. For order intake, we enforce strict ID-only linear search (`findCustomerById`) to prevent duplicate name misattributions.
-  > - **Binary Search ($O(\log n)$):** Because new orders are appended with auto-incrementing IDs (`LDY0001`, `LDY0002`), the master `orders` list remains strictly sorted by Order ID. `binarySearchOrder()` finds orders in logarithmic time, powering Mark Ready, Record Payment, and Claim.
-  > - **Merge Sort ($O(n \log n)$ stable):** A custom recursive divide-and-conquer implementation. It operates out-of-place on a list copy, leaving the original order list sorted for binary search. It powers multi-key sorting in View Orders and intelligent deadline-driven delivery routing."
-
-*(Verbal Handoff: "Let us now witness the system running live with [Speaker 4] leading our demonstration.")*
-
----
-
-```
-========================================================================================
-PART 4: LIVE PROGRAM DEMONSTRATION FLOW
-Speaker: Member 4 (Driver / Presenter) | Time: 6:00 - 9:30
-========================================================================================
-```
-
-### Live Demo Step-by-Step Script:
-
-#### Step 1: System Boot & Realistic Sample Data
-* **Action:** Launch `java Main`.
-* **Show Screen:** Clean 15-option categorized main menu with 30-character border.
-* **Command:** Type `14` (Load Sample Data).
-* **Narration:** *"We begin by loading realistic sample data consisting of 5 student dorm customers and 10 orders spanning Waiting, Processing, Ready, and Completed states across Lipa City dormitories."*
-
-#### Step 2: Customer Registration & Duplicate Warning
-* **Action:** Type `1` (Add Customer).
-* **Input:** Name: `Juan Dela Cruz` -> Notice appears: *"Another customer named 'Juan Dela Cruz' already registered (ID: C001)"*.
-* **Input:** Phone: `09171234567` -> Warning appears: *"Contact number already registered to Juan Dela Cruz (C001)"*.
-* **Input:** Dorm: Select `[2] Green Residences` | Room: `301`.
-* **Narration:** *"Notice our duplicate warning system! The registration succeeds as C006, but alerts staff to avoid student identity mix-ups."*
-
-#### Step 3: Order Intake & Strict Validation
-* **Action:** Type `2` (Create Order).
-* **Test Ambiguity:** Enter `Juan Dela Cruz` -> System rejects with `"Customer not found!"` *(proves orders can never be silently misattributed to the wrong student)*.
-* **Input:** Enter `C006`.
-* **Test Weight Defense:** Enter `Infinity` or `5d` -> System rejects with `"Invalid Weight"`.
-* **Input:** Enter `7.0` kg -> Computed: 1 load, Php 220.00.
-* **Input:** Return: `[2] Delivery` | Deadline: `16:30` | Payment: `[1] Pay Now` -> `[1] Cash`.
-* **Narration:** *"The order is created, appended to the sorted order database, and enqueued at the back of the washing line as position #3."*
-
-#### Step 4: Washing Workflow & LIFO Undo
-* **Action:** 
-  1. Type `3` (Process Next Order) -> Dequeues front order `LDY0002` from `washingQueue` to `PROCESSING`.
-  2. Type `4` (Mark Order Ready) -> Enters `LDY0004` -> Status becomes `READY`.
-  3. Type `13` (Undo Last Action) -> Popped from `undoStack`!
-* **Narration:** *"Watch the undo stack in action. The status of LDY0004 instantly rolls back from READY to PROCESSING, and its timestamp is cleared. If we choose undo again, it pops the next action in reverse sequence."*
-
-#### Step 5: Trike Dispatch with Deadline Routing & Capacity Cap
-* **Action:** Type `7` (Dispatch Trike).
-* **Point Out on Screen:**
-  - Total ready delivery orders = 14 loads. Trike capacity = 10 loads.
-  - Notice the route order:
-    - **Stop 1:** Green Residences `[Target Deadline: 14:00]` (4 loads)
-    - **Stop 2:** Villa Lourdes Dorm `[Target Deadline: 15:00]` (5 loads)
-    - Total = 9 loads. Capacity reached! St. Joseph (18:00) and Lipa Heights (No deadline) are deferred to Run #2!
-* **Narration:** *"This highlights our deadline-driven routing algorithm. Rather than delivering alphabetically, the trike groups by dorm and prioritizes urgent deadlines, packing the trike with the 14:00 and 15:00 orders first."*
-
-#### Step 6: LIFO Physical Delivery & Cash on Delivery
-* **Action:** 
-  1. Type `8` (Deliver Next Stop) -> Arrives at Stop 1: Green Residences (14:00 deadline). Pre-paid online order marked COMPLETED.
-  2. Type `8` (Deliver Next Stop) -> Arrives at Stop 2: Villa Lourdes. Order LDY0007 is UNPAID -> System collects Php 440.00 cash on the spot and marks COMPLETED.
-  3. Try Type `8` again -> System displays `"No active delivery run!"`.
-* **Narration:** *"LIFO unloading complete. The trike is now empty and ready for Run #2."*
-
-#### Step 7: Multi-Key Merge Sort & Operational Reports
-* **Action:** 
-  1. Type `11` (View Orders) -> Sort by `[4] Delivery Deadline`. Show table sorted chronologically.
-  2. Type `12` (System Reports) -> Type `[5]` (Late Orders Report). 
-* **Narration:** *"Order LDY0006 is automatically flagged as LATE because its ready duration exceeded the 3-hour threshold calculated via `java.time.Duration`."*
-
-*(Verbal Handoff: "I will now pass the floor to [Speaker 5] to discuss edge-case engineering and reliability.")*
-
----
-
-```
-========================================================================================
-PART 5: EDGE CASES, SYSTEM ROBUSTNESS & BUG RESILIENCE
-Speaker: Member 5 | Time: 9:30 - 11:00
-========================================================================================
-```
-
-### Slide 8: Enterprise-Grade Edge Case Engineering
-* **Visuals:** Grid showing GitHub Issues resolved: #2, #3, #4, #5.
-* **Key Rubric Points Addressed:** *Functions flawlessly without crashes or logic errors across all edge cases (20 pts).*
-* **Speaker Script:**
-  > "During rigorous QA and stress testing, we discovered and resolved critical boundary conditions:
-  > 1. **Input Stream Exhaustion (Issue #5):** When input reaches EOF or stream closing, `promptLine()` throws `NoSuchElementException` caught by `Main.java`, terminating cleanly without infinite log loops.
-  > 2. **Numeric Validation & Overflow Defense (Issue #2):** Java's `Double.parseDouble` naturally accepts strings like `'Infinity'` or `'1e300'`. We added regex filtering (`^\\d+(\\.\\d+)?$`), `Double.isFinite()`, and a `1000.0 kg` upper bound.
-  > 3. **Student Ambiguity & Identity Collisions (Issue #3):** We separated general search from transactional lookups. Order intake and pickups require exact Customer IDs.
-  > 4. **Deadline-Driven Routing & Cap Guard (Issue #4):** Replaced static alphabetical grouping with deadline-prioritized routing, and guarded the grouping loop so runs never stall."
-
----
-
-```
-========================================================================================
-PART 6: CONCLUSION & PANEL DEFENSE PREPARATION
-All Members | Time: 11:00 - End
-========================================================================================
-```
-
-### Slide 9: Summary of Learnings & Impact
-* **Speaker Script:**
-  > "To conclude: this project demonstrated how theoretical data structures solve concrete commercial bottlenecks. 
-  > - Queues eliminate customer disputes over priority.
-  > - Stacks mirror real-world physical delivery vehicle packing and transactional undo.
-  > - Binary Search provides instant lookups as order volume scales.
-  > - Merge Sort delivers orders to students before their deadlines expire.
+  > Let me start with a quick question that every single student in this room will relate to:
+  > *Have you ever experienced that dreadful Sunday night panic in your dorm—where you have a 7:30 AM presentation on Monday morning, you walk over to pick up your laundry, and the ate at the counter says, 'Ay teka lang, hanapin ko muna sa bunton ng labahan yung basket mo'?*
   > 
-  > Thank you very much. We are now open for your questions and panel defense."
+  > *[Pause for a slight chuckle / smiles from the panel]*
+  > 
+  > That exact student reality is why our group chose **QMAR Laundry Shop** in Villa Lourdes, Mataas na Lupa, right outside De La Salle Lipa. Today, we're proud to present our final project for Data Structures and Algorithms: a complete, resilient Order Management System built not just to check academic boxes, but to solve real, everyday operational headaches using pure Java and foundational computer science principles."
 
 ---
 
-## 🎯 Panel Q&A Defense Guide (Comprehensive Model Answers)
+### Slide 2: The Client & The Paper Logbook Chaos
+* **On Screen:** Photo/map of Villa Lourdes, Lipa City showing proximity to DLSL; split graphic: A messy, water-stained physical logbook vs. Our clean, structured digital terminal system.
+* **Rubric Target:** *Discussion of Documentation: Thoroughly details client's operational problem (15 pts).*
+* **Speaker 1 Script:**
+  > "When we visited QMAR, we found a bustling business serving hundreds of students from Villa Lourdes Dorm, Green Residences, and St. Joseph Hall. But behind the friendly service, their workflow ran entirely on **handwritten logbooks, sticky notes, and physical whiteboards**.
+  > 
+  > On high-volume peak days like Friday drop-offs and Sunday pick-ups, this created four serious operational problems:
+  > 1. **Misplaced Baskets & Broken Queueing:** Orders were washed based on which basket was closest to the washer door, meaning students who dropped off clothes first often waited the longest.
+  > 2. **Unclaimed Laundry Piles:** Clothes sat on the floor for weeks with zero automated status tracking or payment alerts.
+  > 3. **Delivery Route Confusion:** Tricycle drivers loaded deliveries at random. A student with an urgent 1:00 PM class deadline would see their uniform delayed because the driver took an arbitrary route.
+  > 4. **Zero Audit Trail:** Erased pencil entries and lost receipts meant cash discrepancies at closing time.
+  > 
+  > We knew technology could fix this—not with bloated third-party libraries, but with the precise data structures we studied this semester."
 
-### Question 1: *"Why did you use Merge Sort instead of Quick Sort?"*
-* **Ideal Answer:**
-  > "We specifically selected Merge Sort because of **stability** and **worst-case time complexity guarantee**.
-  > 1. **Stability:** In our system, orders are grouped by dormitory. A stable sort preserves the existing relative order of orders within the same dorm or with identical deadlines.
-  > 2. **Guaranteed $O(n \log n)$:** Quick Sort degrades to $O(n^2)$ when inputs are nearly sorted (which happens frequently when orders arrive chronologically). Merge Sort guarantees $O(n \log n)$ performance across best, average, and worst cases."
+---
 
-### Question 2: *"Why is `binarySearchOrder()` viable, but customer searching uses linear search?"*
-* **Ideal Answer:**
-  > "Binary search strictly requires an indexed collection sorted by the search key. New orders receive sequential, auto-incrementing IDs (`LDY0001`, `LDY0002`, etc.) and are appended to `ArrayList<Order>`. Thus, the orders list is inherently sorted by Order ID, enabling $O(\log n)$ search with $O(1)$ random access.
-  > Conversely, the customers list cannot remain sorted simultaneously by Customer ID, Student Name, and Contact Number. Therefore, `SearchUtil.linearSearchCustomer()` applies an $O(n)$ search across all fields, which is fast and optimal for a localized shop."
+### Slide 3: System Architecture & Object-Oriented Principles
+* **On Screen:** Clean Layered Architecture Diagram:
+  - **View Layer:** `Main.java` (Console UI, Menus, Scanner I/O, EOF protection)
+  - **Controller Layer:** `LaundrySystem.java` (Business Logic, In-Memory Collections)
+  - **Algorithmic Engines:** `SearchUtil.java`, `SortUtil.java`, `Validator.java`
+  - **Domain Models:** `Customer`, `Order`, `Stop`, `UndoAction`, Enums
+* **Rubric Target:** *Discussion of Documentation: Complete program architecture/design and OOP principles (15 pts).*
+* **Speaker 1 Script:**
+  > "To ensure our codebase is maintainable, we structured it around the **Model-View-Controller (MVC)** design pattern and strict Object-Oriented principles:
+  > 
+  > - **The View (`Main.java`):** Holds zero business logic. It simply renders menus, captures user keystrokes, and protects the system against abrupt terminal signals.
+  > - **The Controller (`LaundrySystem.java`):** The operational brain. It coordinates all 15 menu actions, manages our queues and stacks, and maintains business invariants.
+  > - **The Models & Utility Engines:** Domain entities like `Customer` and `Order` are strictly encapsulated with private fields and internal financial computations. Meanwhile, classes like `SearchUtil` and `SortUtil` are completely stateless, pure algorithmic engines.
+  > - **Polymorphism in Action:** Throughout our code, we program to interfaces—using `Queue<Order>`, `Deque<Stop>`, and `List<Customer>`—while backing them with concrete `LinkedList`, `ArrayDeque`, and `ArrayList` implementations.
+  > 
+  > But the true magic of this system lies in *how* we selected each data structure to mirror physical shop operations. To explain how real-world laundry baskets turn into queues and tricycle sidecars become stacks, let me hand the floor over to our Data Structure Architect, **[Speaker 2]**!"
 
-### Question 3: *"Why did you declare `washingQueue` as `Queue<Order>` but instantiate it as `LinkedList<Order>`?"*
-* **Ideal Answer:**
-  > "This demonstrates **Polymorphism and Dependency Inversion**. By typing the variable to the `Queue` interface, the rest of the application interacts only with standard queue operations (`add`, `poll`, `peek`, `isEmpty`). We selected `LinkedList` as the concrete backing implementation because inserting at the tail and removing from the head are strictly $O(1)$ pointer operations without the array-resizing overhead of an `ArrayList`."
+*(Speaker 1 smiles, gestures smoothly toward Speaker 2, and steps to the side while Speaker 2 steps forward.)*
 
-### Question 4: *"What happens if a trike driver tries to dispatch a new run while stops are still on the trike?"*
-* **Ideal Answer:**
-  > "We implemented an active run safety guard in `dispatchTrike()`: `if (!trikeStack.isEmpty())`. The system inspects the trike stack and refuses to start a new dispatch until the driver completes option `[8] Deliver Next Stop` for all remaining stops, preventing undelivered bags from being overwritten."
+---
 
-### Question 5: *"How does your Undo stack prevent data corruption if an order has already been delivered?"*
-* **Ideal Answer:**
-  > "`UndoAction` captures the order reference, description, and expected status snapshots. If staff attempt to undo a 'Mark Ready' action, but the order has already been loaded onto the trike (`OUT_FOR_DELIVERY`) or claimed at the counter (`COMPLETED`), the system detects that the live status differs from expected and safely rejects the rollback."
+```
+========================================================================================
+PART 2: DATA STRUCTURES ARCHITECTURE (QUEUES & STACKS)
+Speaker: Speaker 2 (The Data Structure Architect)
+Time: 2:30 – 5:00 (2.5 Minutes)
+========================================================================================
+```
+
+### Slide 4: Queues in Real Life — FIFO (First-In, First-Out)
+* **On Screen:** Visual diagram of `washingQueue` and `pickupQueue` implemented as `LinkedList<T>`. Animated visual showing an order enqueuing at the tail with $O(1)$ and dequeuing at the head with $O(1)$.
+* **Rubric Target:** *Discussion of Documentation: Comprehensive justification of data structure choices (15 pts).*
+* **Speaker 2 Script:**
+  > "Thank you, [Speaker 1]! Good day everyone.
+  > 
+  > When our team first sat down to write code, we established one guiding philosophy: *we should never force a data structure onto a problem just because it looks fancy in an exam. The data structure must match the physical physics of the business.*
+  > 
+  > Take our **FIFO Queues**. In a student laundry service, fairness is non-negotiable. If student A brings their uniform in at 8:00 AM, and student B arrives at 9:00 AM, student A’s clothes *must* enter the washing machine first.
+  > 
+  > We implemented this using `Queue<Order> washingQueue = new LinkedList<>()`:
+  > - When staff create an order via option `[2]`, it immediately enqueues at the tail in **$O(1)$ constant time**.
+  > - When the washing machine opens up, option `[3]` calls `washingQueue.poll()`. The front-most order is dequeued in **$O(1)$ constant time**, moving its state from `WAITING` to `PROCESSING`.
+  > 
+  > We chose `LinkedList` over an `ArrayList` because queue operations only ever touch the ends. Inserting at the tail or removing from the head is a simple pointer reassignment—zero memory copying, zero resizing overhead, and zero chance of an order 'cutting the line'."
+
+---
+
+### Slide 5: Stacks in Real Life — LIFO (Last-In, First-Out)
+* **On Screen:** Dual split graphic:
+  1. *Physical Tricycle Loading:* Diagram of a tricycle sidecar showing Stop 2 loaded first at the deep front, and Stop 1 loaded last right at the tailgate door.
+  2. *Transactional Undo Stack:* Snapshot diagram of `undoStack` holding `UndoAction` objects.
+* **Speaker 2 Script:**
+  > "Now, while queues represent fairness, **Stacks represent physical reality and human error**.
+  > 
+  > We use LIFO Stacks in two critical areas:
+  > 
+  > **First: The Tricycle Delivery Stack (`trikeStack`).**
+  > If you've ever watched a delivery kuya load a motorized tricycle in Lipa City, you know you *cannot* load the first house at the very front of the sidecar. If you do, when you arrive at Stop 1, you'd have to physically unload every single student's laundry onto the dusty road just to reach that one bag at the bottom!
+  > Instead, the driver packs the route in reverse: Stop 3 goes in deepest, Stop 2 goes in the middle, and **Stop 1 is packed last, right at the tailgate door**.
+  > We model this with `Deque<Stop> trikeStack = new ArrayDeque<>()`. The route is pushed in reverse order, so when the driver arrives at dorms, calling `trikeStack.pop()` in **$O(1)$ time** instantly pops the exact bags needed for that stop!
+  > 
+  > **Second: The Counter Undo History (`undoStack`).**
+  > Counter staff work fast. In the rush between classes, an ate might accidentally mark the wrong student's clothes as ready or enter a payment on the wrong ticket.
+  > With our `undoStack`, every status change and payment pushes an `UndoAction` snapshot. Hitting option `[13]` pops the most recent action in **$O(1)$ time**, perfectly rolling back the order's state and financial balances.
+  > 
+  > Stacks keep our delivery trucks organized and our counter staff protected. But to find records instantly and organize delivery routes intelligently, we need algorithms. Here is **[Speaker 3]** to take us through our searching, sorting, and our live system demonstration!"
+
+*(Speaker 2 smiles, nods to Speaker 3, and transitions the presentation.)*
+
+---
+
+```
+========================================================================================
+PART 3: ALGORITHMS & LIVE SYSTEM DEMONSTRATION
+Speaker: Speaker 3 (The Algorithm & Live Demo Lead)
+Time: 5:00 – 8:30 (3.5 Minutes)
+========================================================================================
+```
+
+### Slide 6: Algorithmic Rigor — Searching & Merge Sort
+* **On Screen:** Complexity Table + Visual diagram of recursive divide-and-conquer Merge Sort:
+  - $O(n)$ Linear Search for multi-field customer lookups
+  - $O(\log n)$ Binary Search for auto-incrementing Order IDs
+  - $O(n \log n)$ Stable Merge Sort with Deadline-Driven delivery grouping
+* **Rubric Target:** *Discussion of Documentation: Mathematical/algorithmic justification (15 pts).*
+* **Speaker 3 Script:**
+  > "Thank you, [Speaker 2]! Hi everyone, I'm [Speaker 3].
+  > 
+  > In building our algorithmic foundation, we didn't use black-box shortcuts like Java's built-in `Collections.sort()`. Every search and sort was hand-crafted:
+  > 
+  > 1. **Binary Search ($O(\log n)$):** Notice that when orders are placed, they receive sequential, auto-incrementing IDs like `LDY0001`, `LDY0002`. Because they are appended to an `ArrayList`, our master order list is *always strictly sorted by Order ID*. This allows our `binarySearchOrder()` method to locate any order among thousands in logarithmic time—powering instant lookups when a student comes to claim their clothes.
+  > 2. **Linear Search ($O(n)$):** For customers, a student might search by their phone number, full name, or ID. Because a list cannot be sorted by three different fields simultaneously, we use `linearSearchCustomer()` for broad search, but enforce strict ID matching during order intake to eliminate student identity collisions.
+  > 3. **Custom Recursive Merge Sort ($O(n \log n)$):** Why Merge Sort instead of Quick Sort? Two words: **Stability and Worst-Case Guarantees**.
+  >    In a laundry shop, if two orders have the same 2:00 PM delivery deadline, a stable sort preserves the exact order they were received. Furthermore, Quick Sort degrades to $O(n^2)$ when data is already nearly sorted. Merge Sort guarantees $O(n \log n)$ performance every single time.
+  > 
+  > Now, enough slides—let's open up the console and watch our system solve these problems live!"
+
+---
+
+### Slide 7: Live Console Demonstration (Guided Walkthrough)
+* **On Screen:** Switch to the live Windows terminal running `java Main`.
+* **Rubric Target:** *Program: Functions flawlessly without crashes or logic errors (20 pts); Presentation: Cohesive, engaging, active participation (15 pts).*
+* **Live Action Script & Narration:**
+
+#### Action 1: System Boot & Realistic Sample Data
+* *[Speaker 3 types `14` and presses Enter]*
+* **Speaker 3 Narration:**
+  > "Here is our categorized main menu. We begin by typing `14` to load realistic sample data: 5 student customers from Villa Lourdes, Green Residences, and St. Joseph Hall, and 10 orders spanning various stages of washing, ready, and completed states."
+
+#### Action 2: Customer Registration & Duplicate Warning
+* *[Speaker 3 types `1` to Add Customer]*
+* *[Input: Name: `Juan Dela Cruz`]*
+* **Speaker 3 Narration:**
+  > "Watch what happens when a new student arrives named 'Juan Dela Cruz'. The system immediately flags a warning: *'Another customer named Juan Dela Cruz already registered with ID C001.'*
+  > If we enter phone `09171234567`, it alerts: *'Contact number already registered!'* It doesn't crash or block honest registrations, but gives staff the intelligence to avoid mix-ups."
+* *[Input: Dorm: `[2] Green Residences` | Room: `301` -> Registered as `C006`]*
+
+#### Action 3: Strict Validation & Order Creation
+* *[Speaker 3 types `2` to Create Order]*
+* *[Test Ambiguity: Enter `Juan Dela Cruz` -> System rejects: `Customer not found!`]*
+* **Speaker 3 Narration:**
+  > "Notice our strict validation: typing the name Juan Dela Cruz is rejected because two exist. We must enter exact ID `C006`.
+  > Now for weight: if someone types `Infinity` or `5d` or negative numbers, our validator rejects it instantly. Let's enter `7.0` kg.
+  > The system automatically computes: 1 load, Php 220.00. We select Delivery, set a deadline of `16:30`, and select Pay Now with Cash."
+
+#### Action 4: Washing Queue & The Undo Safety Net
+* *[Speaker 3 types `3` (Process Next Order) -> Dequeues order to `PROCESSING`]*
+* *[Speaker 3 types `4` (Mark Order Ready) -> Enters `LDY0004` -> Status becomes `READY`]*
+* *[Speaker 3 types `13` (Undo Last Action)]*
+* **Speaker 3 Narration:**
+  > "Watch the `undoStack` in action! Staff marked `LDY0004` as ready by mistake. Option `13` pops the undo stack, rolls the status back to `PROCESSING`, and clears the ready timestamp. That's real transactional safety."
+
+#### Action 5: Intelligent Deadline-Driven Trike Dispatch & LIFO Delivery
+* *[Speaker 3 types `7` (Dispatch Trike)]*
+* **Speaker 3 Narration:**
+  > "This is our crowning feature: **Deadline-Driven Trike Routing**.
+  > Look at the screen: we have 14 loads ready for delivery, but our trike has a strict safety limit of 10 loads.
+  > Instead of picking dorms randomly, our Merge Sort evaluated the earliest deadlines. It loaded **Green Residences first because their deadline is 14:00**, and **Villa Lourdes second because their deadline is 15:00**, totaling 9 loads! St. Joseph with an 18:00 deadline is deferred to Run #2.
+  > 
+  > Now let's deliver:
+  > *[Types `8` - Deliver Next Stop]* -> Arrives at Stop 1: Green Residences. Order completed!
+  > *[Types `8` - Deliver Next Stop]* -> Arrives at Stop 2: Villa Lourdes. The order is UNPAID, so the system collects Php 440.00 cash on delivery and marks it completed!
+  > The trike is now empty and ready for the next run."
+
+#### Action 6: Late Orders Report
+* *[Speaker 3 types `12` -> `[5]` Late Orders Report]*
+* **Speaker 3 Narration:**
+  > "Finally, our management reports. Notice order `LDY0006` is automatically flagged as LATE because our system calculated that its ready duration exceeded the 3-hour SLA using Java's `Duration` API.
+  > 
+  > Everything runs smoothly on the surface. But behind this smooth demo was an intense battle with tricky edge cases. To explain how we stress-tested this system and made it bulletproof, here is our Quality Lead, **[Speaker 4]**!"
+
+*(Speaker 3 gestures to Speaker 4, who takes center stage.)*
+
+---
+
+```
+========================================================================================
+PART 4: EDGE CASES, ROBUSTNESS & PANEL DEFENSE
+Speaker: Speaker 4 (The Quality Assurance & Resilience Lead)
+Time: 8:30 – 11:00 (2.5 Minutes)
+========================================================================================
+```
+
+### Slide 8: The Battle with Edge Cases — 4 Critical Bugs Squashed
+* **On Screen:** Grid detailing the 4 GitHub Issues resolved during development:
+  1. **Issue #5:** Input Stream EOF Protection (`NoSuchElementException`)
+  2. **Issue #2:** Numeric Parsing Vulnerabilities (`Infinity`, `1e300`, NaN defense)
+  3. **Issue #3:** Customer Identity Collision Defense
+  4. **Issue #4:** Trike Dispatch Deadlock & Deadline Prioritization
+* **Rubric Target:** *Program: Functions flawlessly without crashes across edge cases (20 pts).*
+* **Speaker 4 Script:**
+  > "Thank you, [Speaker 3]! 
+  > 
+  > You know, in computer science, it's easy to build a demo that works when the user types exactly what you expect. But as software engineers, our job is to make sure the program never crashes when the user does the *unexpected*.
+  > 
+  > During our QA testing, we tracked down and squashed four critical vulnerabilities:
+  > 
+  > 1. **The Infinite Stream Loop (Issue #5):**
+  >    When testing our console with automated pipe inputs, the input stream reached End-Of-File (EOF). Instead of terminating, our validation loops treated the closed stream as empty strings, creating an infinite loop that generated **138 megabytes of error logs in 5 seconds**! We overhauled `promptLine()` to throw `NoSuchElementException` upon stream exhaustion, which `Main.java` catches to exit gracefully.
+  > 2. **The 'Infinity' Bill Bug (Issue #2):**
+  >    Did you know that standard Java `Double.parseDouble()` happily accepts the strings `'Infinity'`, `'1e300'`, and hex floats like `'0x1p4'` as valid positive numbers? If a tired cashier accidentally typed that, a student would be billed billions of pesos! We fortified `Validator.java` with a strict regex (`^\\d+(\\.\\d+)?$`), enforced `Double.isFinite()`, and capped weight at 1,000 kg.
+  > 3. **The Same-Name Collision (Issue #3):**
+  >    In a college town, having two students named 'Juan Dela Cruz' or 'Mark Santos' is an everyday occurrence. Our earlier linear search checked both name and ID, causing orders to silently attach to the first Juan! We decoupled fuzzy customer search from order intake, strictly mandating exact Customer IDs for all transactions.
+  > 4. **The Trike Capacity Deadlock (Issue #4):**
+  >    When testing high-volume dispatches, if the first 9 loads fit onto the trike, but the next dorm required 3 loads, our original loop kept spinning trying to fit the oversized stop. We introduced an immediate capacity break flag, allowing the trike to dispatch with 9 loads and defer the rest cleanly."
+
+---
+
+### Slide 9: Conclusion, Reflection & Team Closing
+* **On Screen:** Summary Slide:
+  - Theoretical DSA solving physical operational bottlenecks
+  - Pure JDK 8+ architecture, 0 external dependencies
+  - 100% test coverage across all core menu paths
+  - Thank you message & team member credits
+* **Speaker 4 Script:**
+  > "To conclude: this project taught our team that Data Structures and Algorithms are not just abstract mathematical puzzles for exams.
+  > - **Queues** protect customer fairness.
+  > - **Stacks** mirror physical delivery sidecars and transactional rollbacks.
+  > - **Binary Search** gives us lightning-fast access as order books grow.
+  > - **Merge Sort** ensures students get their clothes before their class deadlines.
+  > 
+  > We transformed a chaotic, paper-based shop into an organized, automated, and mathematically sound system that QMAR Laundry Shop can genuinely rely on.
+  > 
+  > On behalf of [Speaker 1], [Speaker 2], [Speaker 3], and myself, thank you so much for your time and guidance, Professor Balita and members of the panel. 
+  > 
+  > We are now ready and excited to answer your questions!"
+
+*(All 4 team members stand together in a line, smile, and prepare for Q&A.)*
+
+---
+
+```
+========================================================================================
+PART 5: PANEL Q&A DEFENSE STRATEGY & MODEL ANSWERS
+Speakers: All 4 Members (Role-Divided Participation)
+Time: 11:00 – 15:00 (3–5 Minutes)
+========================================================================================
+```
+
+> **Panel Defense Team Strategy:**  
+> When the panel asks a question, the assigned specialist steps forward to answer. If appropriate, a second teammate can add a 10-second supporting remark. This guarantees that **all 4 members earn full marks for active, confident defense**.
+
+---
+
+### Question 1 (To Speaker 3): *"Why did you use Merge Sort instead of Quick Sort? Isn't Quick Sort faster in practice?"*
+* **Primary Respondent:** **Speaker 3 (Algorithms Lead)**
+* **Model Answer:**
+  > "While Quick Sort often has lower constant factors in memory, we specifically chose **Merge Sort** for two decisive reasons:
+  > 
+  > 1. **Stability:** In our system, delivery orders are grouped by dormitory. A *stable* sort preserves the original relative order of orders that have the identical deadline. Quick Sort is inherently unstable and would scramble that arrival order.
+  > 2. **Guaranteed $O(n \log n)$ Worst-Case:** Quick Sort degrades to $O(n^2)$ when the pivot selection is poor or when data is already nearly sorted—which frequently occurs in a laundry shop where orders are entered chronologically. Merge Sort guarantees $O(n \log n)$ performance under all circumstances, ensuring our delivery dispatch never hangs."
+
+---
+
+### Question 2 (To Speaker 2): *"Why is `binarySearchOrder()` viable, but for customers you had to use linear search?"*
+* **Primary Respondent:** **Speaker 2 (Data Structures Architect)**
+* **Model Answer:**
+  > "Binary Search strictly requires a collection that is indexed and pre-sorted by the search key.
+  > - For **Orders**, each new order receives an auto-incrementing sequential ID (`LDY0001`, `LDY0002`). Because orders are appended sequentially to an `ArrayList`, the list is inherently, permanently sorted by Order ID. That gives us $O(1)$ random access and allows `binarySearchOrder()` to execute in $O(\log n)$ time.
+  > - For **Customers**, a user might search by name, contact number, or ID. A single list cannot be sorted simultaneously by three different fields without maintaining multiple secondary indices. Given the localized scale of a neighborhood laundry shop, an $O(n)$ linear search across all fields is computationally lightweight, simple, and avoids indexing overhead."
+
+---
+
+### Question 3 (To Speaker 1): *"Why declare variables as `Queue<Order>` or `Deque<Stop>` instead of using `LinkedList` directly?"*
+* **Primary Respondent:** **Speaker 1 (Architecture & OOP Lead)**
+* **Model Answer:**
+  > "That is a direct application of the **Liskov Substitution Principle** and **Programming to an Interface**.
+  > By declaring `Queue<Order> washingQueue = new LinkedList<>()`, the rest of `LaundrySystem` interacts only with the abstract behavioral contract of a Queue—namely `add()`, `poll()`, `peek()`, and `isEmpty()`.
+  > If in the future we decide to replace `LinkedList` with a bounded `ArrayBlockingQueue` or a priority-based queue, we only change the instantiation line. None of the operational methods in the system have to be rewritten. It decouples implementation from specification."
+
+---
+
+### Question 4 (To Speaker 4): *"How does your system prevent data corruption if a cashier tries to Undo an action that has already progressed?"*
+* **Primary Respondent:** **Speaker 4 (Quality & Robustness Lead)**
+* **Model Answer:**
+  > "We implemented snapshot validation inside `UndoAction`.
+  > When an action is performed, `UndoAction` records the Order reference, the previous status, and the expected current status.
+  > If staff attempt to undo a 'Mark Ready' action, but that order has *already* been loaded onto the tricycle (`OUT_FOR_DELIVERY`) or claimed by the student (`COMPLETED`), our undo logic checks: `if (order.getStatus() != action.getExpectedCurrentStatus())`.
+  > If the state has moved forward, the system safely aborts the rollback and informs the cashier that the action can no longer be undone, preserving data integrity."
+
+---
+
+### Question 5 (To Speaker 4 / Speaker 1): *"What happens if input is redirected from a file or automated test script and reaches the end?"*
+* **Primary Respondent:** **Speaker 4 (Quality & Robustness Lead)**
+* **Model Answer:**
+  > "That was exactly what we resolved in **Issue #5**.
+  > Previously, when a piped input reached EOF, `Scanner.nextLine()` would throw an exception or return empty strings, causing an infinite validation retry loop that flooded the disk.
+  > We refactored `promptLine()` to detect when `hasNextLine()` is false and throw a dedicated `NoSuchElementException`. In `Main.java`, the entire execution loop is enclosed in a top-level try-catch block that intercepts stream exhaustion, displays a clean exit message, and gracefully shuts down the program with return code 0."
 
 ---
 
 ## 📋 Copy-Paste Instructions for Google Docs
-1. Open your shared Google Doc: [https://docs.google.com/document/d/1Bg0XWk6OJi6-NH6S67heXuoeO9_wdjhXq5a65CXfpas/edit](https://docs.google.com/document/d/1Bg0XWk6OJi6-NH6S67heXuoeO9_wdjhXq5a65CXfpas/edit)
-2. Click the **Document Tabs** icon on the left margin (or select `Insert > Document Tabs`).
-3. Click `+ Add tab` and name the tab **`Presentation flow`**.
-4. Copy the entire contents of this guide and paste it directly into that tab!
+
+To put this presentation flow into your group's shared Google Doc:
+1. Open your document: [https://docs.google.com/document/d/1Bg0XWk6OJi6-NH6S67heXuoeO9_wdjhXq5a65CXfpas/edit](https://docs.google.com/document/d/1Bg0XWk6OJi6-NH6S67heXuoeO9_wdjhXq5a65CXfpas/edit)
+2. In the left-hand margin, click the **Document Tabs** icon (or go to `Insert > Document Tabs`).
+3. Click `+ Add tab` and title it **`Presentation flow`**.
+4. Copy the entire contents of this markdown file and paste it directly into that tab!
